@@ -62,7 +62,22 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!validate()) return;
+    console.log('🔵 handleRegister called');
+
+    if (!validate()) {
+      console.log('❌ Validation failed');
+      // Afficher une alerte si la validation échoue
+      const errorMessages = Object.values(errors).filter(Boolean);
+      const errorMsg = errorMessages.join('\n');
+      if (Platform.OS === 'web') {
+        window.alert('Erreur de validation:\n' + errorMsg);
+      } else {
+        Alert.alert('Erreur de validation', errorMsg);
+      }
+      return;
+    }
+
+    console.log('✅ Validation passed');
 
     console.log('📝 Registration attempt with data:', {
       username: formData.username,
@@ -177,7 +192,7 @@ export default function RegisterScreen() {
             onPress={handleRegister}
             loading={loading}
             fullWidth
-            style={{ marginTop: 8 }}
+            style={{ marginTop: 24 }} // Plus d'espace au-dessus du bouton
           />
 
           <View style={styles.footer}>
@@ -204,7 +219,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 80, // Plus d'espace en bas pour éviter les boutons du téléphone
   },
   header: {
     marginBottom: 32,

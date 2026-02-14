@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 80, // Plus d'espace en bas pour éviter les boutons du téléphone
   },
   header: {
     marginBottom: 32,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 8,
+    marginTop: 24, // Plus d'espace au-dessus des boutons
   },
   loginButton: {
     flex: 1,
