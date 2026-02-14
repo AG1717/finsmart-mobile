@@ -61,6 +61,14 @@ export const goalsApi = {
   },
 
   /**
+   * Supprimer tous les objectifs
+   */
+  deleteAllGoals: async (): Promise<{ deletedCount: number }> => {
+    const response = await apiClient.delete<ApiResponse<{ deletedCount: number }>>('/goals/all');
+    return response.data.data;
+  },
+
+  /**
    * Ajouter une contribution
    */
   addContribution: async (id: string, amount: number, note?: string): Promise<Goal> => {

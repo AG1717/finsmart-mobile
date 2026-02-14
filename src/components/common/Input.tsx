@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps } from 'react-native';
+import React, { useState } from 'react';
+import { View, TextInput, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
 import { COLORS } from '../../utils/constants';
 
 interface InputProps extends TextInputProps {
@@ -13,8 +13,15 @@ export const Input: React.FC<InputProps> = ({
   error,
   required,
   style,
+  secureTextEntry,
   ...props
 }) => {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
+
   return (
     <View style={styles.container}>
       {label && (
@@ -23,15 +30,29 @@ export const Input: React.FC<InputProps> = ({
           {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
-      <TextInput
-        style={[
-          styles.input,
-          error && styles.inputError,
-          style,
-        ]}
-        placeholderTextColor={COLORS.gray[400]}
-        {...props}
-      />
+      <View style={[styles.inputContainer, error && styles.inputError]}>
+        <TextInput
+          style={[
+            styles.input,
+            secureTextEntry && styles.inputWithIcon,
+            style,
+          ]}
+          placeholderTextColor={COLORS.gray[400]}
+          secureTextEntry={secureTextEntry && !isPasswordVisible}
+          {...props}
+        />
+        {secureTextEntry && (
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={togglePasswordVisibility}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.eyeText}>
+              {isPasswordVisible ? 'Masquer' : 'Voir'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -50,15 +71,32 @@ const styles = StyleSheet.create({
   required: {
     color: COLORS.danger,
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.gray[300],
     borderRadius: 8,
+    backgroundColor: COLORS.white,
+  },
+  input: {
+    flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: COLORS.white,
     color: COLORS.gray[900],
+  },
+  inputWithIcon: {
+    paddingRight: 8,
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  eyeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
   inputError: {
     borderColor: COLORS.danger,

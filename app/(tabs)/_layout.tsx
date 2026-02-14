@@ -1,45 +1,129 @@
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useEffect, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
-import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { AppState, AppStateStatus, BackHandler, TouchableOpacity } from 'react-native';
 import { COLORS } from '../../src/utils/constants';
 
 export default function TabsLayout() {
   const { t } = useTranslation();
-  const navigation = useNavigation();
+  const router = useRouter();
+  const pathname = usePathname();
   const appState = useRef(AppState.currentState);
 
+  // Historique des tabs visitées
+  const [tabHistory, setTabHistory] = useState<string[]>(['/']);
+  const tabHistoryRef = useRef<string[]>(['/']);
+
+  // Mettre à jour la ref quand l'historique change
+  useEffect(() => {
+    tabHistoryRef.current = tabHistory;
+  }, [tabHistory]);
+
+  // Ajouter la tab actuelle à l'historique
+  useEffect(() => {
+    if (pathname && !pathname.includes('auth')) {
+      setTabHistory(prev => {
+        if (prev[prev.length - 1] === pathname) return prev;
+        const newHistory = [...prev, pathname];
+        tabHistoryRef.current = newHistory;
+        return newHistory;
+      });
+    }
+  }, [pathname]);
+
+  // Fonction pour revenir en arrière dans les tabs
+  const goBack = useCallback(() => {
+    const history = tabHistoryRef.current;
+    if (history.length > 1) {
+      const newHistory = history.slice(0, -1);
+      const previousTab = newHistory[newHistory.length - 1];
+      tabHistoryRef.current = newHistory;
+      setTabHistory(newHistory);
+      router.replace(previousTab as any);
+      return true;
+    }
+    return false;
+  }, [router]);
+
+  // Android - bloquer complètement le bouton retour
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      goBack();
+      // Toujours retourner true pour bloquer la sortie de l'app
+      return true;
+    });
+    return () => backHandler.remove();
+  }, [goBack]);
+
+  // Web - bloquer le bouton retour du navigateur
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Pousser un état initial pour avoir quelque chose à "revenir"
+    window.history.pushState({ tab: true }, '', window.location.href);
+
+    const handlePopState = () => {
+      // Immédiatement repousser un état pour bloquer la navigation
+      window.history.pushState({ tab: true }, '', window.location.href);
+      // Ensuite gérer la navigation interne
+      goBack();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [goBack]);
+
+  // Réinitialiser quand l'app revient au premier plan
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
       ) {
-        // Réinitialiser la navigation des tabs vers l'index (Overview)
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'index' }],
-          })
-        );
+        // Ne rien faire de spécial, garder l'état actuel
       }
-
       appState.current = nextAppState;
     });
 
     return () => {
       subscription.remove();
     };
-  }, [navigation]);
+  }, []);
+
+  // Bouton retour dans le header - visible seulement si on a de l'historique
+  const HeaderBackButton = () => {
+    if (tabHistoryRef.current.length <= 1) {
+      return null;
+    }
+    return (
+      <TouchableOpacity
+        onPress={goBack}
+        style={{ marginLeft: 16, padding: 8 }}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="arrow-back" size={24} color={COLORS.gray[700]} />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.gray[400],
-        headerShown: false,
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: COLORS.white,
+        },
+        headerTitleStyle: {
+          color: COLORS.gray[900],
+          fontWeight: '600',
+        },
+        headerLeft: () => <HeaderBackButton />,
         tabBarStyle: {
           borderTopWidth: 1,
           borderTopColor: COLORS.gray[200],

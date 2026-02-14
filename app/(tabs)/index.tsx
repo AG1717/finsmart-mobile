@@ -89,12 +89,12 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
         {dashboard?.recentGoals.map((goal) => (
-          <GoalCard key={goal._id} goal={goal} onPress={() => {}} />
+          <GoalCard key={goal._id} goal={goal} onPress={() => router.push(`/goal/${goal._id}` as any)} />
         ))}
       </View>
 
       {/* Add Goal Button */}
-      <TouchableOpacity style={styles.fab}>
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/goal/create')}>
         <Ionicons name="add" size={32} color={COLORS.white} />
       </TouchableOpacity>
     </ScrollView>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { goalsApi } from '../../src/services/api/goalsApi';
 import { GoalCard } from '../../src/components/goal/GoalCard';
@@ -8,6 +9,7 @@ import { COLORS } from '../../src/utils/constants';
 
 export default function LongTermScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   const { data, isLoading } = useQuery({
     queryKey: ['goals', 'long'],
@@ -39,7 +41,7 @@ export default function LongTermScreen() {
       ) : (
         <FlatList
           data={data?.goals}
-          renderItem={({ item }) => <GoalCard goal={item} onPress={() => {}} />}
+          renderItem={({ item }) => <GoalCard goal={item} onPress={() => router.push(`/goal/${item._id}` as any)} />}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
         />

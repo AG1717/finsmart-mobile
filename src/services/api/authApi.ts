@@ -38,4 +38,26 @@ export const authApi = {
     );
     return response.data.data;
   },
+
+  /**
+   * Demander un code de réinitialisation de mot de passe
+   */
+  forgotPassword: async (email: string): Promise<{ message: string; resetCode?: string }> => {
+    const response = await apiClient.post<ApiResponse<{ message: string; resetCode?: string }>>(
+      '/auth/forgot-password',
+      { email }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Réinitialiser le mot de passe avec le code
+   */
+  resetPassword: async (email: string, code: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      '/auth/reset-password',
+      { email, code, newPassword }
+    );
+    return response.data.data;
+  },
 };

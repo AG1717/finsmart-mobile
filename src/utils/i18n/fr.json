@@ -31,7 +31,18 @@
     "alreadyHaveAccount": "Vous avez déjà un compte ?",
     "loginSuccess": "Connexion réussie",
     "signupSuccess": "Inscription réussie",
-    "logoutSuccess": "Déconnexion réussie"
+    "logoutSuccess": "Déconnexion réussie",
+    "forgotPasswordTitle": "Mot de passe oublié",
+    "forgotPasswordDesc": "Entrez votre email pour recevoir un code de réinitialisation",
+    "sendCode": "Envoyer le code",
+    "resetPassword": "Réinitialiser",
+    "resetCode": "Code de réinitialisation",
+    "newPasswordLabel": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "codeSent": "Un code de réinitialisation a été envoyé",
+    "passwordResetSuccess": "Mot de passe réinitialisé avec succès",
+    "passwordsNoMatch": "Les mots de passe ne correspondent pas",
+    "backToLogin": "Retour à la connexion"
   },
   "dashboard": {
     "title": "Tableau de bord",

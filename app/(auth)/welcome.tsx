@@ -1,9 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Platform, BackHandler } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+
+  // Bloquer le bouton retour pour ne pas sortir de l'app
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => backHandler.remove();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const blockBack = () => window.history.go(1);
+    window.history.pushState(null, document.title, window.location.href);
+    window.addEventListener('popstate', blockBack);
+    return () => window.removeEventListener('popstate', blockBack);
+  }, []);
 
   const handleSignUp = () => {
     router.push('/(auth)/register');
@@ -86,12 +100,14 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     width: '100%',
+    flexDirection: 'row',
+    gap: 12,
   },
   button: {
+    flex: 1,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 16,
   },
   primaryButton: {
     backgroundColor: '#4F46E5',

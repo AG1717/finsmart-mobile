@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal, Dimensions, Platform, Image, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal, Dimensions, Platform, Image, StatusBar, Alert, DimensionValue } from 'react-native';
 import { Svg, Circle, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -9,8 +9,10 @@ const MAX_WIDTH = 600; // Maximum width for web to keep it centered
 const isSmallScreen = SCREEN_WIDTH < 375;
 const scale = SCREEN_WIDTH / 375; // Base on iPhone SE width
 
-// API URL - Production Render.com backend
-const API_URL = 'https://finsmart-backend-foc5.onrender.com/api/v1';
+// API URL - Production Hostilo
+// const API_URL = 'https://finsmart-api.geniusmedia.net/api/v1'; // Production Hostilo
+// const API_URL = 'https://finsmart-backend-vtwo.onrender.com/api/v1'; // Render.com
+const API_URL = 'http://localhost:3000/api/v1'; // Local testing
 
 // Responsive font size
 const responsiveFontSize = (size: number) => {
@@ -245,7 +247,7 @@ export default function App() {
   };
 
   // Helper function for smooth screen transitions
-  const changeScreen = (newScreen: string) => {
+  const changeScreen = (newScreen: Screen) => {
     setIsTransitioning(true);
     setTimeout(() => {
       setCurrentScreen(newScreen);
@@ -288,6 +290,12 @@ export default function App() {
     const longTermTarget = longTermGoalsList.reduce((sum, g) => sum + (g.amounts?.target || 0), 0);
     const longTermCurrent = longTermGoalsList.reduce((sum, g) => sum + (g.amounts?.current || 0), 0);
 
+    // Calculer les pourcentages de progression (0 si pas d'objectifs)
+    const achievedProgress = goals.length > 0 ? (completedGoals / goals.length) * 100 : 0;
+    const shortTermProgress = shortTermTarget > 0 ? (shortTermCurrent / shortTermTarget) * 100 : 0;
+    const longTermProgress = longTermTarget > 0 ? (longTermCurrent / longTermTarget) * 100 : 0;
+    const savingProgress = totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
+
     return {
       totalTarget,
       totalCurrent,
@@ -298,7 +306,12 @@ export default function App() {
       longTermGoals: longTermGoalsList.length,
       longTermTarget,
       longTermCurrent,
-      activeGoals: goals.filter(g => g.status === 'active').length
+      activeGoals: goals.filter(g => g.status === 'active').length,
+      // Pourcentages pré-calculés
+      achievedProgress,
+      shortTermProgress,
+      longTermProgress,
+      savingProgress
     };
   };
 
@@ -392,6 +405,41 @@ export default function App() {
       } else {
         const data = await response.json();
         showToast(`Error: ${data.error?.message || 'Failed to delete goal'}`, 'error');
+      }
+    } catch (error) {
+      showToast('Network error', 'error');
+    }
+  };
+
+  // Supprimer TOUS les objectifs
+  const handleDeleteAllGoals = async () => {
+    if (goals.length === 0) {
+      showToast('No goals to delete', 'error');
+      return;
+    }
+
+    try {
+      // Utiliser le nouvel endpoint pour supprimer tous les objectifs
+      const response = await fetch(`${API_URL}/goals/all`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const deletedCount = data.data?.deletedCount || goals.length;
+        // Vider la liste locale
+        setGoals([]);
+        showToast(`${deletedCount} goals deleted. Counter reset to 0!`, 'success');
+
+        // Track reset
+        trackEvent('all_goals_deleted', { count: deletedCount });
+      } else {
+        showToast(`Error: ${data.error?.message || 'Failed to delete goals'}`, 'error');
       }
     } catch (error) {
       showToast('Network error', 'error');
@@ -674,25 +722,28 @@ export default function App() {
                         strokeWidth="4"
                         fill="none"
                       />
-                      <Circle
-                        cx="30"
-                        cy="30"
-                        r="25"
-                        stroke="#00C9A7"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeDasharray={`${((stats.completedGoals / (goals.length || 1)) * 100) * 1.57} 157`}
-                        strokeDashoffset="0"
-                        strokeLinecap="round"
-                        rotation="-90"
-                        origin="30, 30"
-                      />
+                      {stats.achievedProgress > 0 && (
+                        <Circle
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          stroke="#00C9A7"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeDasharray={`${stats.achievedProgress * 1.57} 157`}
+                          strokeDashoffset="0"
+                          strokeLinecap="round"
+                          rotation="-90"
+                          origin="30, 30"
+                        />
+                      )}
                     </Svg>
                     <View style={styles.badgeIconInner}>
                       <Image source={require('./assets/icone-achieved.jpeg')} style={styles.badgeImage} />
                     </View>
                   </View>
                   <Text style={styles.badgeLabel}>Achieved</Text>
+                  <Text style={styles.badgePercent}>{Math.round(stats.achievedProgress)}%</Text>
                 </View>
 
                 <View style={styles.badge}>
@@ -706,25 +757,28 @@ export default function App() {
                         strokeWidth="4"
                         fill="none"
                       />
-                      <Circle
-                        cx="30"
-                        cy="30"
-                        r="25"
-                        stroke="#00C9A7"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeDasharray={`${((stats.shortTermCurrent / (stats.shortTermTarget || 1)) * 100) * 1.57} 157`}
-                        strokeDashoffset="0"
-                        strokeLinecap="round"
-                        rotation="-90"
-                        origin="30, 30"
-                      />
+                      {stats.shortTermProgress > 0 && (
+                        <Circle
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          stroke="#00C9A7"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeDasharray={`${stats.shortTermProgress * 1.57} 157`}
+                          strokeDashoffset="0"
+                          strokeLinecap="round"
+                          rotation="-90"
+                          origin="30, 30"
+                        />
+                      )}
                     </Svg>
                     <View style={styles.badgeIconInner}>
                       <Image source={require('./assets/icone-short-term.jpeg')} style={styles.badgeImage} />
                     </View>
                   </View>
                   <Text style={styles.badgeLabel}>Short term</Text>
+                  <Text style={styles.badgePercent}>{Math.round(stats.shortTermProgress)}%</Text>
                 </View>
 
                 <View style={styles.badge}>
@@ -738,25 +792,28 @@ export default function App() {
                         strokeWidth="4"
                         fill="none"
                       />
-                      <Circle
-                        cx="30"
-                        cy="30"
-                        r="25"
-                        stroke="#00C9A7"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeDasharray={`${((stats.longTermCurrent / (stats.longTermTarget || 1)) * 100) * 1.57} 157`}
-                        strokeDashoffset="0"
-                        strokeLinecap="round"
-                        rotation="-90"
-                        origin="30, 30"
-                      />
+                      {stats.longTermProgress > 0 && (
+                        <Circle
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          stroke="#00C9A7"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeDasharray={`${stats.longTermProgress * 1.57} 157`}
+                          strokeDashoffset="0"
+                          strokeLinecap="round"
+                          rotation="-90"
+                          origin="30, 30"
+                        />
+                      )}
                     </Svg>
                     <View style={styles.badgeIconInner}>
                       <Image source={require('./assets/icone-long-term.jpeg')} style={styles.badgeImage} />
                     </View>
                   </View>
                   <Text style={styles.badgeLabel}>Long term</Text>
+                  <Text style={styles.badgePercent}>{Math.round(stats.longTermProgress)}%</Text>
                 </View>
 
                 <View style={styles.badge}>
@@ -770,25 +827,28 @@ export default function App() {
                         strokeWidth="4"
                         fill="none"
                       />
-                      <Circle
-                        cx="30"
-                        cy="30"
-                        r="25"
-                        stroke="#00C9A7"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeDasharray={`${((stats.totalCurrent / (stats.totalTarget || 1)) * 100) * 1.57} 157`}
-                        strokeDashoffset="0"
-                        strokeLinecap="round"
-                        rotation="-90"
-                        origin="30, 30"
-                      />
+                      {stats.savingProgress > 0 && (
+                        <Circle
+                          cx="30"
+                          cy="30"
+                          r="25"
+                          stroke="#00C9A7"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeDasharray={`${stats.savingProgress * 1.57} 157`}
+                          strokeDashoffset="0"
+                          strokeLinecap="round"
+                          rotation="-90"
+                          origin="30, 30"
+                        />
+                      )}
                     </Svg>
                     <View style={styles.badgeIconInner}>
                       <Image source={require('./assets/icone-saving.jpeg')} style={styles.badgeImage} />
                     </View>
                   </View>
                   <Text style={styles.badgeLabel}>Saving</Text>
+                  <Text style={styles.badgePercent}>{Math.round(stats.savingProgress)}%</Text>
                 </View>
               </View>
             </View>
@@ -1467,6 +1527,29 @@ export default function App() {
                   </TouchableOpacity>
                 </View>
 
+                {/* Reset All Goals Button */}
+                <TouchableOpacity
+                  style={styles.profileResetButton}
+                  onPress={() => {
+                    if (Platform.OS === 'web') {
+                      if (window.confirm('Are you sure you want to delete ALL goals? This cannot be undone!')) {
+                        handleDeleteAllGoals();
+                      }
+                    } else {
+                      Alert.alert(
+                        'Reset All Goals',
+                        'Are you sure you want to delete ALL goals? This cannot be undone!',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Delete All', style: 'destructive', onPress: handleDeleteAllGoals }
+                        ]
+                      );
+                    }
+                  }}
+                >
+                  <Text style={styles.profileResetText}>🗑️ Reset All Goals ({goals.length})</Text>
+                </TouchableOpacity>
+
                 {/* Logout Button */}
                 <TouchableOpacity
                   style={styles.profileLogoutButton}
@@ -1596,19 +1679,21 @@ const GoalCard = ({ goal, goalId, icon, title, date, current, target, percentage
                 strokeWidth="4"
                 fill="none"
               />
-              <Circle
-                cx="25"
-                cy="25"
-                r="20"
-                stroke="#2ECC71"
-                strokeWidth="4"
-                fill="none"
-                strokeDasharray={`${percentage * 1.257} 125.7`}
-                strokeDashoffset="0"
-                strokeLinecap="round"
-                rotation="-90"
-                origin="25, 25"
-              />
+              {percentage > 0 && (
+                <Circle
+                  cx="25"
+                  cy="25"
+                  r="20"
+                  stroke="#2ECC71"
+                  strokeWidth="4"
+                  fill="none"
+                  strokeDasharray={`${percentage * 1.257} 125.7`}
+                  strokeDashoffset="0"
+                  strokeLinecap="round"
+                  rotation="-90"
+                  origin="25, 25"
+                />
+              )}
             </Svg>
           </View>
           <Text style={styles.progressPercentage}>{Math.round(percentage)}%</Text>
@@ -1651,7 +1736,8 @@ const GoalCard = ({ goal, goalId, icon, title, date, current, target, percentage
   );
 };
 
-const styles = StyleSheet.create({
+// @ts-ignore - react-native-web types conflict with react-native types
+const styles: Record<string, any> = StyleSheet.create({
   // Welcome Screen
   welcomeContainer: {
     flex: 1,
@@ -1889,6 +1975,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
   },
+  badgePercent: {
+    color: '#00C9A7',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
   badgeCount: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -1957,7 +2049,7 @@ const styles = StyleSheet.create({
     gap: isWeb ? 16 : 0,
   },
   goalCardItem: {
-    width: isWeb ? 'calc(50% - 8px)' : '48%',
+    width: '48%' as DimensionValue,
     backgroundColor: '#FFFFFF',
     padding: isSmallScreen ? 12 : 16,
     borderRadius: 16,
@@ -2428,6 +2520,20 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#00C9A7',
     fontWeight: 'bold',
+  },
+  profileResetButton: {
+    backgroundColor: '#FF8C00',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  profileResetText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   profileLogoutButton: {
     backgroundColor: '#FF4444',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../src/store/authStore';
@@ -25,18 +25,25 @@ export default function RegisterScreen() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
+    // Username: alphanumérique uniquement, 3-30 caractères
     if (!formData.username) {
       newErrors.username = t('errors.required');
     } else if (formData.username.length < 3) {
       newErrors.username = 'Username must be at least 3 characters';
+    } else if (formData.username.length > 30) {
+      newErrors.username = 'Username cannot exceed 30 characters';
+    } else if (!/^[a-zA-Z0-9]+$/.test(formData.username)) {
+      newErrors.username = 'Username can only contain letters and numbers (no spaces or special characters)';
     }
 
+    // Email
     if (!formData.email) {
       newErrors.email = t('errors.required');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = t('errors.invalidEmail');
     }
 
+    // Password: min 8 chars, 1 uppercase, 1 lowercase, 1 digit
     if (!formData.password) {
       newErrors.password = t('errors.required');
     } else if (formData.password.length < 8) {
@@ -46,22 +53,58 @@ export default function RegisterScreen() {
     }
 
     setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      console.log('❌ Validation errors:', newErrors);
+    }
+
     return Object.keys(newErrors).length === 0;
   };
 
   const handleRegister = async () => {
     if (!validate()) return;
 
+    console.log('📝 Registration attempt with data:', {
+      username: formData.username,
+      email: formData.email,
+      passwordLength: formData.password.length,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+    });
+
     try {
       setLoading(true);
       await register(formData);
+      console.log('✅ Registration successful');
       router.replace('/(tabs)');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || 'Registration failed';
+      console.error('❌ Registration error:', {
+        message: error.message,
+        response: error.response?.data,
+        code: error.code,
+        status: error.response?.status,
+      });
+
+      let errorMessage = 'Registration failed';
+
+      // Extraire le message d'erreur spécifique
+      if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Erreur réseau. Vérifiez que le backend est accessible.';
+      } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+        errorMessage = 'Délai d\'attente dépassé. Le serveur ne répond pas.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // Afficher l'erreur avec plus de détails
+      const fullMessage = `${errorMessage}\n\nVérifiez la console pour plus de détails.`;
+
       if (Platform.OS === 'web') {
-        window.alert(errorMessage);
+        window.alert(fullMessage);
       } else {
-        Alert.alert(t('common.error'), errorMessage);
+        Alert.alert(t('common.error'), fullMessage);
       }
     } finally {
       setLoading(false);
@@ -74,6 +117,15 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* GROS bouton retour visible - backup au cas où le header natif ne marche pas */}
+        <Pressable
+          style={styles.bigBackButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.bigBackArrow}>←</Text>
+          <Text style={styles.bigBackText}>RETOUR</Text>
+        </Pressable>
+
         <View style={styles.header}>
           <Text style={styles.title}>{t('auth.signup')}</Text>
           <Text style={styles.subtitle}>Create your FinSmart account</Text>
@@ -151,7 +203,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   header: {
@@ -183,5 +235,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  bigBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 24,
+    alignSelf: 'flex-start',
+  },
+  bigBackArrow: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  bigBackText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });

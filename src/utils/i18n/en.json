@@ -31,7 +31,18 @@
     "alreadyHaveAccount": "Already have an account?",
     "loginSuccess": "Login successful",
     "signupSuccess": "Sign up successful",
-    "logoutSuccess": "Logout successful"
+    "logoutSuccess": "Logout successful",
+    "forgotPasswordTitle": "Forgot Password",
+    "forgotPasswordDesc": "Enter your email to receive a reset code",
+    "sendCode": "Send Code",
+    "resetPassword": "Reset Password",
+    "resetCode": "Reset Code",
+    "newPasswordLabel": "New Password",
+    "confirmPassword": "Confirm Password",
+    "codeSent": "A reset code has been sent",
+    "passwordResetSuccess": "Password reset successfully",
+    "passwordsNoMatch": "Passwords do not match",
+    "backToLogin": "Back to Login"
   },
   "dashboard": {
     "title": "Dashboard",

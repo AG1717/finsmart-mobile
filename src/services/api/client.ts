@@ -1,9 +1,58 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from '../storage/tokenStorage';
 import { ApiError } from '../../types';
 
-// URL de production sur Render
-const API_BASE_URL = 'https://finsmart-backend-foc5.onrender.com/api/v1';
+// Fonction pour obtenir l'URL de l'API automatiquement
+const getApiUrl = () => {
+  console.log('🔍 [API] Detecting API URL...');
+  console.log('🔍 [API] Platform:', Platform.OS);
+
+  // En production
+  // return 'https://finsmart-api.geniusmedia.net/api/v1';
+
+  // En développement local - WEB
+  if (Platform.OS === 'web') {
+    console.log('✅ [API] Using localhost for web');
+    return 'http://localhost:3000/api/v1';
+  }
+
+  // Sur mobile (Expo Go), essayez différentes méthodes de détection
+  console.log('🔍 [API] Constants.expoConfig:', Constants.expoConfig);
+  console.log('🔍 [API] hostUri:', Constants.expoConfig?.hostUri);
+
+  // Méthode 1: expoConfig.hostUri (nouveau)
+  let host = Constants.expoConfig?.hostUri?.split(':')[0];
+
+  // Méthode 2: manifest.debuggerHost (ancien, pour compatibilité)
+  if (!host && Constants.manifest) {
+    const debuggerHost = Constants.manifest.debuggerHost;
+    host = debuggerHost?.split(':')[0];
+    console.log('🔍 [API] Using manifest.debuggerHost:', debuggerHost);
+  }
+
+  // Méthode 3: manifest2
+  if (!host && Constants.manifest2) {
+    const debuggerHost = Constants.manifest2.extra?.expoGo?.debuggerHost;
+    host = debuggerHost?.split(':')[0];
+    console.log('🔍 [API] Using manifest2.debuggerHost:', debuggerHost);
+  }
+
+  if (host) {
+    const url = `http://${host}:3000/api/v1`;
+    console.log('✅ [API] Auto-detected host:', host);
+    console.log('✅ [API] API URL:', url);
+    return url;
+  }
+
+  // Fallback sur l'IP manuelle si la détection échoue
+  console.warn('⚠️ [API] Could not auto-detect host, using fallback IP: 192.168.1.5');
+  return 'http://192.168.1.5:3000/api/v1';
+};
+
+const API_BASE_URL = getApiUrl();
+console.log('🌐 [API] Final API Base URL:', API_BASE_URL);
 
 // Créer l'instance Axios
 export const apiClient: AxiosInstance = axios.create({
@@ -38,17 +87,40 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Log de debug pour voir les requêtes
+    console.log('🌐 [API Request]', {
+      method: config.method?.toUpperCase(),
+      url: `${config.baseURL}${config.url}`,
+      hasAuth: !!token,
+      data: config.data,
+    });
+
     return config;
   },
   (error) => {
+    console.error('❌ [API Request Error]', error);
     return Promise.reject(error);
   }
 );
 
 // Intercepteur de réponse - gérer le refresh token
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ [API Response]', {
+      method: response.config.method?.toUpperCase(),
+      url: response.config.url,
+      status: response.status,
+      success: response.data?.success,
+    });
+    return response;
+  },
   async (error: AxiosError<ApiError>) => {
+    console.error('❌ [API Response Error]', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.error?.message || error.message,
+      code: error.code,
+    });
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // Si erreur 401 et on n'a pas déjà essayé de refresh

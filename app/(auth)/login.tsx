@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../src/store/authStore';
@@ -73,6 +73,15 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* GROS bouton retour visible - backup au cas où le header natif ne marche pas */}
+        <Pressable
+          style={styles.bigBackButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.bigBackArrow}>←</Text>
+          <Text style={styles.bigBackText}>RETOUR</Text>
+        </Pressable>
+
         <View style={styles.header}>
           <Text style={styles.title}>{t('auth.login')}</Text>
           <Text style={styles.subtitle}>{t('auth.welcome')}</Text>
@@ -98,13 +107,24 @@ export default function LoginScreen() {
             required
           />
 
-          <Button
-            title={t('auth.loginButton')}
-            onPress={handleLogin}
-            loading={loading}
-            fullWidth
-            style={{ marginTop: 8 }}
-          />
+          <View style={styles.buttonContainer}>
+            <Button
+              title={t('auth.loginButton')}
+              onPress={handleLogin}
+              loading={loading}
+              style={styles.loginButton}
+            />
+            <Button
+              title={t('auth.signup')}
+              onPress={() => router.push('/(auth)/register')}
+              variant="outline"
+              style={styles.signupButton}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/(auth)/forgot-password' as any)}>
+            <Text style={styles.link}>{t('auth.forgotPassword')}</Text>
+          </TouchableOpacity>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.dontHaveAccount')} </Text>
@@ -129,7 +149,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   header: {
@@ -148,6 +168,17 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  loginButton: {
+    flex: 1,
+  },
+  signupButton: {
+    flex: 1,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -161,5 +192,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  forgotPassword: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  bigBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 24,
+    alignSelf: 'flex-start',
+  },
+  bigBackArrow: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  bigBackText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });

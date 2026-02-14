@@ -50,19 +50,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   register: async (data: RegisterData) => {
     try {
+      console.log('🏪 [AuthStore] Starting registration...', data);
       set({ isLoading: true, error: null });
 
+      console.log('📡 [AuthStore] Calling authApi.register...');
       const response = await authApi.register(data);
+      console.log('✅ [AuthStore] API response received:', response);
 
       // Sauvegarder les tokens
+      console.log('💾 [AuthStore] Saving tokens...');
       await saveTokens(response.tokens.accessToken, response.tokens.refreshToken);
+      console.log('✅ [AuthStore] Tokens saved');
 
       set({
         user: response.user,
         isAuthenticated: true,
         isLoading: false,
       });
+      console.log('✅ [AuthStore] Registration complete, user authenticated');
     } catch (error: any) {
+      console.error('❌ [AuthStore] Registration failed:', error);
       const errorMessage = error.response?.data?.error?.message || 'Registration failed';
       set({
         error: errorMessage,
