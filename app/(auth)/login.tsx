@@ -35,16 +35,35 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    console.log('🔵 handleLogin called - email:', email, 'password length:', password?.length);
+
     if (!validate()) {
+      console.log('❌ Validation failed');
+      // Afficher une alerte si la validation échoue
+      const validationErrors = [];
+      if (!email) validationErrors.push('Email requis');
+      else if (!/\S+@\S+\.\S+/.test(email)) validationErrors.push('Email invalide');
+      if (!password) validationErrors.push('Mot de passe requis');
+
+      const errorMsg = validationErrors.join(', ');
+      if (Platform.OS === 'web') {
+        window.alert('Erreur de validation: ' + errorMsg);
+      } else {
+        Alert.alert('Erreur de validation', errorMsg);
+      }
       return;
     }
 
+    console.log('✅ Validation passed, calling login API...');
+
     try {
       setLoading(true);
+      console.log('🔄 Calling login function...');
       await login(email, password);
+      console.log('✅ Login successful, redirecting...');
       router.replace('/(tabs)');
     } catch (error: any) {
-      console.log('Login error:', error);
+      console.log('❌ Login error:', error);
       let errorMessage = t('errors.invalidCredentials');
 
       if (error.code === 'ECONNABORTED') {
@@ -55,7 +74,11 @@ export default function LoginScreen() {
         errorMessage = error.response.data.error.message;
       } else if (error.message) {
         errorMessage = error.message;
+      } else {
+        errorMessage = 'Erreur inconnue: ' + JSON.stringify(error);
       }
+
+      console.log('🚨 Showing error alert:', errorMessage);
 
       if (Platform.OS === 'web') {
         window.alert(errorMessage);
@@ -64,6 +87,7 @@ export default function LoginScreen() {
       }
     } finally {
       setLoading(false);
+      console.log('🔵 Login process finished');
     }
   };
 
