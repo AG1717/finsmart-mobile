@@ -8,18 +8,29 @@ import { ApiError } from '../../types';
 const getApiUrl = () => {
   console.log('🔍 [API] Detecting API URL...');
   console.log('🔍 [API] Platform:', Platform.OS);
+  console.log('🔍 [API] __DEV__:', __DEV__);
+  console.log('🔍 [API] hostname:', typeof window !== 'undefined' ? window.location.hostname : 'N/A');
 
-  // En production (si la variable d'environnement est définie)
+  // En production WEB (détecté par le hostname)
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // Si on est sur Vercel (pas localhost), utiliser l'URL de production
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      const productionUrl = 'https://finsmart-backend.onrender.com/api/v1';
+      console.log('✅ [API] Using production URL (deployed web):', productionUrl);
+      return productionUrl;
+    } else {
+      // Localhost pour développement local
+      console.log('✅ [API] Using localhost for local web development');
+      return 'http://localhost:3000/api/v1';
+    }
+  }
+
+  // En production mobile (si la variable d'environnement est définie)
   const productionUrl = process.env.EXPO_PUBLIC_API_URL;
   if (productionUrl && !__DEV__) {
     console.log('✅ [API] Using production URL:', productionUrl);
     return productionUrl;
-  }
-
-  // En développement local - WEB
-  if (Platform.OS === 'web') {
-    console.log('✅ [API] Using localhost for web');
-    return 'http://localhost:3000/api/v1';
   }
 
   // Sur mobile (Expo Go), essayez différentes méthodes de détection
