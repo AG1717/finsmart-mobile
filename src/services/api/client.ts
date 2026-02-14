@@ -9,8 +9,12 @@ const getApiUrl = () => {
   console.log('🔍 [API] Detecting API URL...');
   console.log('🔍 [API] Platform:', Platform.OS);
 
-  // En production
-  // return 'https://finsmart-api.geniusmedia.net/api/v1';
+  // En production (si la variable d'environnement est définie)
+  const productionUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (productionUrl && !__DEV__) {
+    console.log('✅ [API] Using production URL:', productionUrl);
+    return productionUrl;
+  }
 
   // En développement local - WEB
   if (Platform.OS === 'web') {
