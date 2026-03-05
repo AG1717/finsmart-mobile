@@ -64,15 +64,23 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    console.log('[Auth][Register] Button pressed');
     const nextErrors = validate();
     if (Object.keys(nextErrors).length > 0) {
-      Alert.alert(t('common.error'), Object.values(nextErrors).join('\n'));
+      const message = Object.values(nextErrors).join('\n');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(message);
+      } else {
+        Alert.alert(t('common.error'), message);
+      }
       return;
     }
 
     try {
       setLoading(true);
+      console.log('[Auth][Register] Sending request...');
       await register(formData);
+      console.log('[Auth][Register] Success');
       router.replace('/(tabs)');
     } catch (error: unknown) {
       const typedError = error as {
@@ -92,7 +100,12 @@ export default function RegisterScreen() {
         errorMessage = typedError.message;
       }
 
-      Alert.alert(t('common.error'), errorMessage);
+      console.error('[Auth][Register] Error:', error);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert(t('common.error'), errorMessage);
+      }
     } finally {
       setLoading(false);
     }

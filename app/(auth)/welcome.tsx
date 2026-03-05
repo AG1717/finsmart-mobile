@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, BackHandler, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function WelcomeScreen() {
@@ -15,7 +15,6 @@ export default function WelcomeScreen() {
     }
   };
 
-  // Bloquer le bouton retour pour ne pas sortir de l'app
   useEffect(() => {
     if (Platform.OS !== 'android') {
       return;
@@ -54,7 +53,11 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>💰</Text>
+          <Image
+            source={require('../../assets/logo-new.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={styles.appName}>FinSmart</Text>
         </View>
 
@@ -105,9 +108,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 48,
   },
-  logo: {
-    fontSize: 80,
-    marginBottom: 16,
+  logoImage: {
+    width: 140,
+    height: 110,
+    marginBottom: 12,
   },
   appName: {
     fontSize: 36,

@@ -45,16 +45,23 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    console.log('[Auth][Login] Button pressed');
     const nextErrors = validate();
     if (Object.keys(nextErrors).length > 0) {
       const message = Object.values(nextErrors).filter(Boolean).join('\n') || t('errors.invalidCredentials');
-      Alert.alert(t('common.error'), message);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(message);
+      } else {
+        Alert.alert(t('common.error'), message);
+      }
       return;
     }
 
     try {
       setLoading(true);
+      console.log('[Auth][Login] Sending request...');
       await login(email, password);
+      console.log('[Auth][Login] Success');
       router.replace('/(tabs)');
     } catch (error: unknown) {
       const typedError = error as {
@@ -75,7 +82,12 @@ export default function LoginScreen() {
         errorMessage = typedError.message;
       }
 
-      Alert.alert(t('common.error'), errorMessage);
+      console.error('[Auth][Login] Error:', error);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert(t('common.error'), errorMessage);
+      }
     } finally {
       setLoading(false);
     }
