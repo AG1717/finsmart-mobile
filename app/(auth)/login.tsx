@@ -134,7 +134,7 @@ export default function LoginScreen() {
           <View style={styles.buttonContainer}>
             <Button
               title={t('auth.loginButton')}
-              onPress={handleLogin}
+              onPress={ handleLogin}
               loading={loading}
               style={styles.loginButton}
             />
