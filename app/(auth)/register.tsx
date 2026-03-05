@@ -71,7 +71,7 @@ export default function RegisterScreen() {
       const typedError = error as {
         code?: string;
         message?: string;
-        response?: { data?: { error?: { message?: string; details?: Array<{ field?: string; message?: string }> } } };
+        response?: { status?: number; data?: { error?: { message?: string; details?: Array<{ field?: string; message?: string }> } } };
       };
 
       let message = 'Registration failed';
@@ -88,6 +88,8 @@ export default function RegisterScreen() {
       }
 
       console.error('[Auth][Register] Error:', error);
+      console.error('[Auth][Register] Status:', typedError.response?.status);
+      console.error('[Auth][Register] Response:', typedError.response?.data);
       showMessage(message);
     } finally {
       setLoading(false);

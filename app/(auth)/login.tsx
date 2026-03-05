@@ -45,7 +45,7 @@ export default function LoginScreen() {
       const typedError = error as {
         code?: string;
         message?: string;
-        response?: { data?: { error?: { message?: string; details?: Array<{ field?: string; message?: string }> } } };
+        response?: { status?: number; data?: { error?: { message?: string; details?: Array<{ field?: string; message?: string }> } } };
       };
 
       let message = 'Login failed';
@@ -62,6 +62,8 @@ export default function LoginScreen() {
       }
 
       console.error('[Auth][Login] Error:', error);
+      console.error('[Auth][Login] Status:', typedError.response?.status);
+      console.error('[Auth][Login] Response:', typedError.response?.data);
       showMessage(message);
     } finally {
       setLoading(false);
