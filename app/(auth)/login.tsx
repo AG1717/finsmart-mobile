@@ -17,6 +17,16 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
+  const blurActiveElement = () => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    if (active && typeof active.blur === 'function') {
+      active.blur();
+    }
+  };
+
   const validate = () => {
     const nextErrors: { email?: string; password?: string } = {};
 
@@ -116,19 +126,34 @@ export default function LoginScreen() {
             />
             <Button
               title={t('auth.signup')}
-              onPress={() => router.push('/(auth)/register')}
+              onPress={() => {
+                blurActiveElement();
+                router.push('/(auth)/register');
+              }}
               variant="outline"
               style={styles.signupButton}
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/(auth)/forgot-password' as any)}>
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => {
+              blurActiveElement();
+              router.push('/(auth)/forgot-password' as any);
+            }}
+          >
             <Text style={styles.link}>{t('auth.forgotPassword')}</Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.dontHaveAccount')} </Text>
-            <Text style={styles.link} onPress={() => router.push('/(auth)/register')}>
+            <Text
+              style={styles.link}
+              onPress={() => {
+                blurActiveElement();
+                router.push('/(auth)/register');
+              }}
+            >
               {t('auth.signup')}
             </Text>
           </View>

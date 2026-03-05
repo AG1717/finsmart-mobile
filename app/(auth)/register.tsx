@@ -22,6 +22,16 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const blurActiveElement = () => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    if (active && typeof active.blur === 'function') {
+      active.blur();
+    }
+  };
+
   const validate = () => {
     const nextErrors: Record<string, string> = {};
 
@@ -155,7 +165,13 @@ export default function RegisterScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')} </Text>
-            <Text style={styles.link} onPress={() => router.push('/(auth)/login')}>
+            <Text
+              style={styles.link}
+              onPress={() => {
+                blurActiveElement();
+                router.push('/(auth)/login');
+              }}
+            >
               {t('auth.login')}
             </Text>
           </View>

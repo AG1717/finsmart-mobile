@@ -5,14 +5,35 @@ import { useRouter } from 'expo-router';
 export default function WelcomeScreen() {
   const router = useRouter();
 
+  const blurActiveElement = () => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      return;
+    }
+    const active = document.activeElement as HTMLElement | null;
+    if (active && typeof active.blur === 'function') {
+      active.blur();
+    }
+  };
+
   // Bloquer le bouton retour pour ne pas sortir de l'app
   useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => backHandler.remove();
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (
+      Platform.OS !== 'web' ||
+      typeof window === 'undefined' ||
+      !window.history ||
+      typeof window.history.pushState !== 'function'
+    ) {
+      return;
+    }
+
     const blockBack = () => window.history.go(1);
     window.history.pushState(null, document.title, window.location.href);
     window.addEventListener('popstate', blockBack);
@@ -20,10 +41,12 @@ export default function WelcomeScreen() {
   }, []);
 
   const handleSignUp = () => {
+    blurActiveElement();
     router.push('/(auth)/register');
   };
 
   const handleLogin = () => {
+    blurActiveElement();
     router.push('/(auth)/login');
   };
 
