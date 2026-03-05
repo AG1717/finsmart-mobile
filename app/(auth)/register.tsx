@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../src/store/authStore';
-import { Input } from '../../src/components/common/Input';
-import { Button } from '../../src/components/common/Button';
-import { COLORS } from '../../src/utils/constants';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
   const register = useAuthStore((state) => state.register);
-
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -20,59 +14,20 @@ export default function RegisterScreen() {
     lastName: '',
   });
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const blurActiveElement = () => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') {
-      return;
+  const showMessage = (message: string) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.alert(message);
+    } else {
+      Alert.alert('Error', message);
     }
-    const active = document.activeElement as HTMLElement | null;
-    if (active && typeof active.blur === 'function') {
-      active.blur();
-    }
-  };
-
-  const validate = () => {
-    const nextErrors: Record<string, string> = {};
-
-    if (!formData.username) {
-      nextErrors.username = t('errors.required');
-    } else if (formData.username.length < 3) {
-      nextErrors.username = 'Username must be at least 3 characters';
-    } else if (formData.username.length > 30) {
-      nextErrors.username = 'Username cannot exceed 30 characters';
-    } else if (!/^[a-zA-Z0-9]+$/.test(formData.username)) {
-      nextErrors.username = 'Username can only contain letters and numbers';
-    }
-
-    if (!formData.email) {
-      nextErrors.email = t('errors.required');
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      nextErrors.email = t('errors.invalidEmail');
-    }
-
-    if (!formData.password) {
-      nextErrors.password = t('errors.required');
-    } else if (formData.password.length < 8) {
-      nextErrors.password = t('errors.passwordTooShort');
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      nextErrors.password = t('errors.passwordRequirements');
-    }
-
-    setErrors(nextErrors);
-    return nextErrors;
   };
 
   const handleRegister = async () => {
     console.log('[Auth][Register] Button pressed');
-    const nextErrors = validate();
-    if (Object.keys(nextErrors).length > 0) {
-      const message = Object.values(nextErrors).join('\n');
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.alert(message);
-      } else {
-        Alert.alert(t('common.error'), message);
-      }
+
+    if (!formData.username || !formData.email || !formData.password) {
+      showMessage('Username, email and password are required.');
       return;
     }
 
@@ -80,7 +35,6 @@ export default function RegisterScreen() {
       setLoading(true);
       console.log('[Auth][Register] Sending request...');
       await register(formData);
-      console.log('[Auth][Register] Success');
       router.replace('/(tabs)');
     } catch (error: unknown) {
       const typedError = error as {
@@ -89,171 +43,160 @@ export default function RegisterScreen() {
         response?: { data?: { error?: { message?: string } } };
       };
 
-      let errorMessage = 'Registration failed';
-      if (typedError.response?.data?.error?.message) {
-        errorMessage = typedError.response.data.error.message;
+      let message = 'Registration failed';
+      if (typedError.code === 'ECONNABORTED') {
+        message = 'Server timeout. Render may be waking up, retry in 30-60s.';
       } else if (typedError.code === 'ERR_NETWORK') {
-        errorMessage = 'Network error. Check backend availability.';
-      } else if (typedError.code === 'ECONNABORTED' || typedError.code === 'ETIMEDOUT') {
-        errorMessage = 'Request timeout. The server did not respond in time.';
+        message = 'Network error. Check internet/CORS/backend status.';
+      } else if (typedError.response?.data?.error?.message) {
+        message = typedError.response.data.error.message;
       } else if (typedError.message) {
-        errorMessage = typedError.message;
+        message = typedError.message;
       }
 
       console.error('[Auth][Register] Error:', error);
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.alert(errorMessage);
-      } else {
-        Alert.alert(t('common.error'), errorMessage);
-      }
+      showMessage(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Pressable style={styles.bigBackButton} onPress={() => router.back()}>
-          <Text style={styles.bigBackArrow}>←</Text>
-          <Text style={styles.bigBackText}>RETOUR</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Text style={styles.backText}>←</Text>
+      </Pressable>
+
+      <View style={styles.logoWrap}>
+        <Image source={require('../../assets/logo_new.png')} style={styles.logoImage} resizeMode="contain" />
+        <Text style={styles.appName}>FinSmart</Text>
+      </View>
+
+      <Text style={styles.title}>Create account</Text>
+
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          placeholderTextColor="#A9A9B3"
+          value={formData.username}
+          onChangeText={(v) => setFormData({ ...formData, username: v })}
+          autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#A9A9B3"
+          value={formData.email}
+          onChangeText={(v) => setFormData({ ...formData, email: v })}
+          autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#A9A9B3"
+          value={formData.password}
+          onChangeText={(v) => setFormData({ ...formData, password: v })}
+          secureTextEntry
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="First name (optional)"
+          placeholderTextColor="#A9A9B3"
+          value={formData.firstName}
+          onChangeText={(v) => setFormData({ ...formData, firstName: v })}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Last name (optional)"
+          placeholderTextColor="#A9A9B3"
+          value={formData.lastName}
+          onChangeText={(v) => setFormData({ ...formData, lastName: v })}
+        />
+
+        <Pressable style={({ pressed }) => [styles.registerButton, pressed && styles.pressed]} onPress={handleRegister} disabled={loading}>
+          <Text style={styles.registerButtonText}>{loading ? 'Loading...' : 'Sign Up'}</Text>
         </Pressable>
-
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('auth.signup')}</Text>
-          <Text style={styles.subtitle}>Create your FinSmart account</Text>
-        </View>
-
-        <View style={styles.form}>
-          <Input
-            label={t('auth.username')}
-            value={formData.username}
-            onChangeText={(text) => setFormData({ ...formData, username: text })}
-            autoCapitalize="none"
-            error={errors.username}
-            required
-          />
-
-          <Input
-            label={t('auth.email')}
-            value={formData.email}
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            error={errors.email}
-            required
-          />
-
-          <Input
-            label={t('auth.password')}
-            value={formData.password}
-            onChangeText={(text) => setFormData({ ...formData, password: text })}
-            secureTextEntry
-            error={errors.password}
-            required
-          />
-
-          <Input
-            label={t('auth.firstName')}
-            value={formData.firstName}
-            onChangeText={(text) => setFormData({ ...formData, firstName: text })}
-          />
-
-          <Input
-            label={t('auth.lastName')}
-            value={formData.lastName}
-            onChangeText={(text) => setFormData({ ...formData, lastName: text })}
-          />
-
-          <Button
-            title={t('auth.signupButton')}
-            onPress={handleRegister}
-            loading={loading}
-            fullWidth
-            style={{ marginTop: 24 }}
-          />
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')} </Text>
-            <Text
-              style={styles.link}
-              onPress={() => {
-                blurActiveElement();
-                router.push('/(auth)/login');
-              }}
-            >
-              {t('auth.login')}
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  scrollContent: {
-    flexGrow: 1,
+    minHeight: '100%' as any,
+    backgroundColor: '#F2F2F2',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 80,
+    paddingTop: 56,
+    paddingBottom: 32,
   },
-  header: {
-    marginBottom: 32,
+  backButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+  },
+  backText: {
+    fontSize: 28,
+    color: '#12122E',
+  },
+  logoWrap: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 26,
+  },
+  logoImage: {
+    width: 132,
+    height: 96,
+  },
+  appName: {
+    marginTop: 4,
+    fontSize: 44,
+    fontWeight: '700',
+    color: '#2F8AC1',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.gray[900],
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.gray[600],
+    textAlign: 'center',
+    fontSize: 34,
+    fontWeight: '700',
+    color: '#2F8AC1',
+    marginBottom: 18,
   },
   form: {
-    flex: 1,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
+    gap: 14,
   },
-  footer: {
-    flexDirection: 'row',
+  input: {
+    height: 58,
+    borderWidth: 2,
+    borderColor: '#2F8AC1',
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    fontSize: 26,
+    color: '#12122E',
+    backgroundColor: '#F2F2F2',
+  },
+  registerButton: {
+    marginTop: 8,
+    alignSelf: 'center',
+    width: 290,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: '#2F8AC1',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
   },
-  footerText: {
-    fontSize: 14,
-    color: COLORS.gray[600],
-  },
-  link: {
-    fontSize: 14,
-    color: COLORS.primary,
+  registerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 28,
     fontWeight: '600',
   },
-  bigBackButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#3B82F6',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 24,
-    alignSelf: 'flex-start',
-  },
-  bigBackArrow: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  bigBackText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+  pressed: {
+    opacity: 0.86,
   },
 });

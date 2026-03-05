@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from '../storage/tokenStorage';
 import { ApiError } from '../../types';
 
-const DEFAULT_PRODUCTION_API_URL = 'https://finsmart-backend.onrender.com/api/v1';
+const DEFAULT_PRODUCTION_API_URL = 'https://finsmart-backend-vtwo.onrender.com/api/v1';
 
 const getApiUrl = () => {
   const envApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
@@ -57,7 +57,7 @@ console.log('[API] Final API Base URL:', API_BASE_URL);
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },

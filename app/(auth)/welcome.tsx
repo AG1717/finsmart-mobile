@@ -6,88 +6,50 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   const blurActiveElement = () => {
-    if (Platform.OS !== 'web' || typeof document === 'undefined') {
-      return;
-    }
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     const active = document.activeElement as HTMLElement | null;
-    if (active && typeof active.blur === 'function') {
-      active.blur();
-    }
+    if (active && typeof active.blur === 'function') active.blur();
   };
 
   useEffect(() => {
-    if (Platform.OS !== 'android') {
-      return;
-    }
+    if (Platform.OS !== 'android') return;
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => backHandler.remove();
   }, []);
 
-  useEffect(() => {
-    if (
-      Platform.OS !== 'web' ||
-      typeof window === 'undefined' ||
-      !window.history ||
-      typeof window.history.pushState !== 'function'
-    ) {
-      return;
-    }
-
-    const blockBack = () => window.history.go(1);
-    window.history.pushState(null, document.title, window.location.href);
-    window.addEventListener('popstate', blockBack);
-    return () => window.removeEventListener('popstate', blockBack);
-  }, []);
-
-  const handleSignUp = () => {
+  const goToRegister = () => {
     blurActiveElement();
     router.push('/(auth)/register');
   };
 
-  const handleLogin = () => {
+  const goToLogin = () => {
     blurActiveElement();
     router.push('/(auth)/login');
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/logo_new.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.appName}>FinSmart</Text>
-        </View>
+      <View style={styles.topSection}>
+        <Image source={require('../../assets/logo_new.png')} style={styles.logoImage} resizeMode="contain" />
+        <Text style={styles.appName}>FinSmart</Text>
+      </View>
 
-        <Text style={styles.tagline}>Reach financial goals Smarter and Faster</Text>
+      <View style={styles.bottomCurve}>
+        <Text style={styles.tagline}>Reach financial goals{'\n'}Smarter and Faster</Text>
 
-        <View style={styles.buttonsContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              styles.primaryButton,
-              pressed && styles.buttonPressed,
-              Platform.OS === 'web' && styles.webButton,
-            ]}
-            onPress={handleSignUp}
-          >
-            <Text style={styles.primaryButtonText}>Sign Up</Text>
-          </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.button, styles.outlineButton, pressed && styles.pressed]}
+          onPress={goToRegister}
+        >
+          <Text style={styles.outlineButtonText}>Sign Up</Text>
+        </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              styles.outlineButton,
-              pressed && styles.outlineButtonPressed,
-              Platform.OS === 'web' && styles.webButton,
-            ]}
-            onPress={handleLogin}
-          >
-            <Text style={styles.outlineButtonText}>Login</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          style={({ pressed }) => [styles.button, styles.solidButton, pressed && styles.pressed]}
+          onPress={goToLogin}
+        >
+          <Text style={styles.solidButtonText}>Login</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -96,73 +58,67 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F2F2F2',
   },
-  content: {
-    flex: 1,
+  topSection: {
+    flex: 0.46,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
+    paddingTop: 22,
   },
   logoImage: {
-    width: 140,
-    height: 110,
-    marginBottom: 12,
+    width: 128,
+    height: 98,
+    marginBottom: 8,
   },
   appName: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#4F46E5',
+    fontSize: 56,
+    fontWeight: '700',
+    color: '#2F8AC1',
+    letterSpacing: 0.4,
+  },
+  bottomCurve: {
+    flex: 0.54,
+    backgroundColor: '#2F8AC1',
+    borderTopLeftRadius: 240,
+    borderTopRightRadius: 240,
+    paddingHorizontal: 26,
+    paddingTop: 86,
   },
   tagline: {
-    fontSize: 18,
+    color: '#FFFFFF',
+    fontSize: 47,
+    fontWeight: '700',
+    lineHeight: 58,
     textAlign: 'center',
-    color: '#6B7280',
-    marginBottom: 64,
-    paddingHorizontal: 16,
-  },
-  buttonsContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    gap: 12,
+    marginBottom: 52,
   },
   button: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
+    height: 60,
     alignItems: 'center',
-  },
-  primaryButton: {
-    backgroundColor: '#4F46E5',
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   outlineButton: {
-    backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#4F46E5',
+    borderColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+  },
+  solidButton: {
+    backgroundColor: '#FFFFFF',
   },
   outlineButtonText: {
-    color: '#4F46E5',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 30,
     fontWeight: '600',
   },
-  buttonPressed: {
-    opacity: 0.8,
-    backgroundColor: '#4338CA',
+  solidButtonText: {
+    color: '#111111',
+    fontSize: 30,
+    fontWeight: '600',
   },
-  outlineButtonPressed: {
-    opacity: 0.8,
-    backgroundColor: '#EEF2FF',
+  pressed: {
+    opacity: 0.85,
   },
-  webButton: {
-    cursor: 'pointer',
-  } as any,
 });
