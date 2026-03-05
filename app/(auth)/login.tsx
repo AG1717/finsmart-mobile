@@ -18,76 +18,56 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validate = () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const nextErrors: { email?: string; password?: string } = {};
 
     if (!email) {
-      newErrors.email = t('errors.required');
+      nextErrors.email = t('errors.required');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = t('errors.invalidEmail');
+      nextErrors.email = t('errors.invalidEmail');
     }
 
     if (!password) {
-      newErrors.password = t('errors.required');
+      nextErrors.password = t('errors.required');
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(nextErrors);
+    return nextErrors;
   };
 
   const handleLogin = async () => {
-    console.log('🔵 handleLogin called - email:', email, 'password length:', password?.length);
-
-    if (!validate()) {
-      console.log('❌ Validation failed');
-      // Afficher une alerte si la validation échoue
-      const validationErrors = [];
-      if (!email) validationErrors.push('Email requis');
-      else if (!/\S+@\S+\.\S+/.test(email)) validationErrors.push('Email invalide');
-      if (!password) validationErrors.push('Mot de passe requis');
-
-      const errorMsg = validationErrors.join(', ');
-      if (Platform.OS === 'web') {
-        window.alert('Erreur de validation: ' + errorMsg);
-      } else {
-        Alert.alert('Erreur de validation', errorMsg);
-      }
+    const nextErrors = validate();
+    if (Object.keys(nextErrors).length > 0) {
+      const message = Object.values(nextErrors).filter(Boolean).join('\n') || t('errors.invalidCredentials');
+      Alert.alert(t('common.error'), message);
       return;
     }
 
-    console.log('✅ Validation passed, calling login API...');
-
     try {
       setLoading(true);
-      console.log('🔄 Calling login function...');
       await login(email, password);
-      console.log('✅ Login successful, redirecting...');
       router.replace('/(tabs)');
-    } catch (error: any) {
-      console.log('❌ Login error:', error);
+    } catch (error: unknown) {
+      const typedError = error as {
+        code?: string;
+        message?: string;
+        response?: { data?: { error?: { message?: string } } };
+      };
+
       let errorMessage = t('errors.invalidCredentials');
 
-      if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Connexion lente. Le serveur se réveille, réessayez dans 30 secondes.';
-      } else if (error.code === 'ERR_NETWORK') {
-        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
-      } else if (error.response?.data?.error?.message) {
-        errorMessage = error.response.data.error.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      } else {
-        errorMessage = 'Erreur inconnue: ' + JSON.stringify(error);
+      if (typedError.code === 'ECONNABORTED') {
+        errorMessage = 'Connection timeout. The server may be waking up, please retry.';
+      } else if (typedError.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error. Check your internet connection.';
+      } else if (typedError.response?.data?.error?.message) {
+        errorMessage = typedError.response.data.error.message;
+      } else if (typedError.message) {
+        errorMessage = typedError.message;
       }
 
-      console.log('🚨 Showing error alert:', errorMessage);
-
-      if (Platform.OS === 'web') {
-        window.alert(errorMessage);
-      } else {
-        Alert.alert(t('common.error'), errorMessage);
-      }
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
-      console.log('🔵 Login process finished');
     }
   };
 
@@ -97,11 +77,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* GROS bouton retour visible - backup au cas où le header natif ne marche pas */}
-        <Pressable
-          style={styles.bigBackButton}
-          onPress={() => router.back()}
-        >
+        <Pressable style={styles.bigBackButton} onPress={() => router.back()}>
           <Text style={styles.bigBackArrow}>←</Text>
           <Text style={styles.bigBackText}>RETOUR</Text>
         </Pressable>
@@ -134,7 +110,7 @@ export default function LoginScreen() {
           <View style={styles.buttonContainer}>
             <Button
               title={t('auth.loginButton')}
-              onPress={ handleLogin}
+              onPress={handleLogin}
               loading={loading}
               style={styles.loginButton}
             />
@@ -152,10 +128,7 @@ export default function LoginScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.dontHaveAccount')} </Text>
-            <Text
-              style={styles.link}
-              onPress={() => router.push('/(auth)/register')}
-            >
+            <Text style={styles.link} onPress={() => router.push('/(auth)/register')}>
               {t('auth.signup')}
             </Text>
           </View>
@@ -174,7 +147,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 80, // Plus d'espace en bas pour éviter les boutons du téléphone
+    paddingBottom: 80,
   },
   header: {
     marginBottom: 32,
@@ -195,7 +168,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 24, // Plus d'espace au-dessus des boutons
+    marginTop: 24,
   },
   loginButton: {
     flex: 1,

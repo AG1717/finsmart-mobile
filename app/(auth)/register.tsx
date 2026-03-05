@@ -23,104 +23,66 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
+    const nextErrors: Record<string, string> = {};
 
-    // Username: alphanumérique uniquement, 3-30 caractères
     if (!formData.username) {
-      newErrors.username = t('errors.required');
+      nextErrors.username = t('errors.required');
     } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+      nextErrors.username = 'Username must be at least 3 characters';
     } else if (formData.username.length > 30) {
-      newErrors.username = 'Username cannot exceed 30 characters';
+      nextErrors.username = 'Username cannot exceed 30 characters';
     } else if (!/^[a-zA-Z0-9]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters and numbers (no spaces or special characters)';
+      nextErrors.username = 'Username can only contain letters and numbers';
     }
 
-    // Email
     if (!formData.email) {
-      newErrors.email = t('errors.required');
+      nextErrors.email = t('errors.required');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t('errors.invalidEmail');
+      nextErrors.email = t('errors.invalidEmail');
     }
 
-    // Password: min 8 chars, 1 uppercase, 1 lowercase, 1 digit
     if (!formData.password) {
-      newErrors.password = t('errors.required');
+      nextErrors.password = t('errors.required');
     } else if (formData.password.length < 8) {
-      newErrors.password = t('errors.passwordTooShort');
+      nextErrors.password = t('errors.passwordTooShort');
     } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = t('errors.passwordRequirements');
+      nextErrors.password = t('errors.passwordRequirements');
     }
 
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      console.log('❌ Validation errors:', newErrors);
-    }
-
-    return Object.keys(newErrors).length === 0;
+    setErrors(nextErrors);
+    return nextErrors;
   };
 
   const handleRegister = async () => {
-    console.log('🔵 handleRegister called');
-
-    if (!validate()) {
-      console.log('❌ Validation failed');
-      // Afficher une alerte si la validation échoue
-      const errorMessages = Object.values(errors).filter(Boolean);
-      const errorMsg = errorMessages.join('\n');
-      if (Platform.OS === 'web') {
-        window.alert('Erreur de validation:\n' + errorMsg);
-      } else {
-        Alert.alert('Erreur de validation', errorMsg);
-      }
+    const nextErrors = validate();
+    if (Object.keys(nextErrors).length > 0) {
+      Alert.alert(t('common.error'), Object.values(nextErrors).join('\n'));
       return;
     }
-
-    console.log('✅ Validation passed');
-
-    console.log('📝 Registration attempt with data:', {
-      username: formData.username,
-      email: formData.email,
-      passwordLength: formData.password.length,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-    });
 
     try {
       setLoading(true);
       await register(formData);
-      console.log('✅ Registration successful');
       router.replace('/(tabs)');
-    } catch (error: any) {
-      console.error('❌ Registration error:', {
-        message: error.message,
-        response: error.response?.data,
-        code: error.code,
-        status: error.response?.status,
-      });
+    } catch (error: unknown) {
+      const typedError = error as {
+        code?: string;
+        message?: string;
+        response?: { data?: { error?: { message?: string } } };
+      };
 
       let errorMessage = 'Registration failed';
-
-      // Extraire le message d'erreur spécifique
-      if (error.response?.data?.error?.message) {
-        errorMessage = error.response.data.error.message;
-      } else if (error.code === 'ERR_NETWORK') {
-        errorMessage = 'Erreur réseau. Vérifiez que le backend est accessible.';
-      } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-        errorMessage = 'Délai d\'attente dépassé. Le serveur ne répond pas.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (typedError.response?.data?.error?.message) {
+        errorMessage = typedError.response.data.error.message;
+      } else if (typedError.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error. Check backend availability.';
+      } else if (typedError.code === 'ECONNABORTED' || typedError.code === 'ETIMEDOUT') {
+        errorMessage = 'Request timeout. The server did not respond in time.';
+      } else if (typedError.message) {
+        errorMessage = typedError.message;
       }
 
-      // Afficher l'erreur avec plus de détails
-      const fullMessage = `${errorMessage}\n\nVérifiez la console pour plus de détails.`;
-
-      if (Platform.OS === 'web') {
-        window.alert(fullMessage);
-      } else {
-        Alert.alert(t('common.error'), fullMessage);
-      }
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -132,11 +94,7 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* GROS bouton retour visible - backup au cas où le header natif ne marche pas */}
-        <Pressable
-          style={styles.bigBackButton}
-          onPress={() => router.back()}
-        >
+        <Pressable style={styles.bigBackButton} onPress={() => router.back()}>
           <Text style={styles.bigBackArrow}>←</Text>
           <Text style={styles.bigBackText}>RETOUR</Text>
         </Pressable>
@@ -192,15 +150,12 @@ export default function RegisterScreen() {
             onPress={handleRegister}
             loading={loading}
             fullWidth
-            style={{ marginTop: 24 }} // Plus d'espace au-dessus du bouton
+            style={{ marginTop: 24 }}
           />
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')} </Text>
-            <Text
-              style={styles.link}
-              onPress={() => router.push('/(auth)/login')}
-            >
+            <Text style={styles.link} onPress={() => router.push('/(auth)/login')}>
               {t('auth.login')}
             </Text>
           </View>
@@ -219,7 +174,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 80, // Plus d'espace en bas pour éviter les boutons du téléphone
+    paddingBottom: 80,
   },
   header: {
     marginBottom: 32,

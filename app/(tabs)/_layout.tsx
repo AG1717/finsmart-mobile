@@ -1,19 +1,27 @@
-import { Tabs, usePathname, useRouter } from 'expo-router';
+import { Tabs, usePathname, useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { AppState, AppStateStatus, BackHandler, TouchableOpacity } from 'react-native';
+import { AppState, AppStateStatus, BackHandler, TouchableOpacity, ActivityIndicator, View } from 'react-native';
 import { COLORS } from '../../src/utils/constants';
+import { useAuthStore } from '../../src/store/authStore';
 
 export default function TabsLayout() {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const appState = useRef(AppState.currentState);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
 
   // Historique des tabs visitées
   const [tabHistory, setTabHistory] = useState<string[]>(['/']);
   const tabHistoryRef = useRef<string[]>(['/']);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // Mettre à jour la ref quand l'historique change
   useEffect(() => {
@@ -109,6 +117,18 @@ export default function TabsLayout() {
       </TouchableOpacity>
     );
   };
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <Tabs
