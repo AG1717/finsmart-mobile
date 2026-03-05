@@ -30,21 +30,48 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     console.log('[Auth][Register] Button pressed');
 
-    if (!formData.username || !formData.email || !formData.password) {
+    const normalizedUsername = formData.username.trim();
+    const normalizedEmail = formData.email.trim().toLowerCase();
+
+    if (!normalizedUsername || !normalizedEmail || !formData.password) {
       showMessage('Username, email and password are required.');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9]+$/.test(normalizedUsername)) {
+      showMessage('Username can only contain letters and numbers.');
+      return;
+    }
+
+    if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
+      showMessage('Username must be between 3 and 30 characters.');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
+      showMessage('Please enter a valid email address.');
+      return;
+    }
+
+    if (formData.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      showMessage('Password must have 8+ chars, one uppercase, one lowercase, and one number.');
       return;
     }
 
     try {
       setLoading(true);
       console.log('[Auth][Register] Sending request...');
-      await register(formData);
+      await register({
+        ...formData,
+        username: normalizedUsername,
+        email: normalizedEmail,
+      });
       router.replace('/(tabs)');
     } catch (error: unknown) {
       const typedError = error as {
         code?: string;
         message?: string;
-        response?: { data?: { error?: { message?: string } } };
+        response?: { data?: { error?: { message?: string; details?: Array<{ field?: string; message?: string }> } } };
       };
 
       let message = 'Registration failed';
@@ -52,6 +79,8 @@ export default function RegisterScreen() {
         message = 'Server timeout. Render may be waking up, retry in 30-60s.';
       } else if (typedError.code === 'ERR_NETWORK') {
         message = 'Network error. Check internet/CORS/backend status.';
+      } else if (typedError.response?.data?.error?.details?.length) {
+        message = typedError.response.data.error.details[0].message || message;
       } else if (typedError.response?.data?.error?.message) {
         message = typedError.response.data.error.message;
       } else if (typedError.message) {

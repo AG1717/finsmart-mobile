@@ -25,21 +25,27 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     console.log('[Auth][Login] Button pressed');
 
-    if (!email || !password) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) {
       showMessage('Please fill email and password.');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
+      showMessage('Please enter a valid email address.');
       return;
     }
 
     try {
       setLoading(true);
       console.log('[Auth][Login] Sending request...');
-      await login(email.trim(), password);
+      await login(normalizedEmail, password);
       router.replace('/(tabs)');
     } catch (error: unknown) {
       const typedError = error as {
         code?: string;
         message?: string;
-        response?: { data?: { error?: { message?: string } } };
+        response?: { data?: { error?: { message?: string; details?: Array<{ field?: string; message?: string }> } } };
       };
 
       let message = 'Login failed';
@@ -47,6 +53,8 @@ export default function LoginScreen() {
         message = 'Server timeout. Render may be waking up, retry in 30-60s.';
       } else if (typedError.code === 'ERR_NETWORK') {
         message = 'Network error. Check internet/CORS/backend status.';
+      } else if (typedError.response?.data?.error?.details?.length) {
+        message = typedError.response.data.error.details[0].message || message;
       } else if (typedError.response?.data?.error?.message) {
         message = typedError.response.data.error.message;
       } else if (typedError.message) {
@@ -76,7 +84,7 @@ export default function LoginScreen() {
       <View style={styles.form}>
         <TextInput
           style={styles.input}
-          placeholder="Username, Email"
+          placeholder="Email"
           placeholderTextColor="#A9A9B3"
           value={email}
           onChangeText={setEmail}
