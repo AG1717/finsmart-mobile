@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/store/authStore';
+
+const { width, height } = Dimensions.get('window');
+const uiScale = Math.max(0.78, Math.min(Math.min(width / 390, height / 844), 1.15));
+const rs = (value: number) => Math.round(value * uiScale);
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -130,62 +134,62 @@ const styles = StyleSheet.create({
   container: {
     minHeight: '100%' as any,
     backgroundColor: '#F2F2F2',
-    paddingHorizontal: 24,
-    paddingTop: 56,
-    paddingBottom: 32,
+    paddingHorizontal: rs(20),
+    paddingTop: rs(42),
+    paddingBottom: rs(24),
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: rs(34),
+    height: rs(34),
     justifyContent: 'center',
   },
   backText: {
-    fontSize: 28,
+    fontSize: rs(24),
     color: '#12122E',
   },
   logoWrap: {
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 26,
+    marginTop: rs(6),
+    marginBottom: rs(20),
   },
   logoImage: {
-    width: 132,
-    height: 96,
+    width: rs(108),
+    height: rs(78),
   },
   appName: {
-    marginTop: 4,
-    fontSize: 44,
+    marginTop: rs(4),
+    fontSize: rs(32),
     fontWeight: '700',
     color: '#2F8AC1',
   },
   title: {
     textAlign: 'center',
-    fontSize: 34,
+    fontSize: rs(27),
     fontWeight: '700',
     color: '#2F8AC1',
-    marginBottom: 18,
+    marginBottom: rs(14),
   },
   form: {
     width: '100%',
-    maxWidth: 560,
+    maxWidth: 520,
     alignSelf: 'center',
-    gap: 14,
+    gap: rs(10),
   },
   input: {
-    height: 58,
+    height: rs(50),
     borderWidth: 2,
     borderColor: '#2F8AC1',
     borderRadius: 8,
-    paddingHorizontal: 18,
-    fontSize: 26,
+    paddingHorizontal: rs(14),
+    fontSize: rs(18),
     color: '#12122E',
     backgroundColor: '#F2F2F2',
   },
   registerButton: {
-    marginTop: 8,
+    marginTop: rs(6),
     alignSelf: 'center',
-    width: 290,
-    height: 60,
+    width: Math.min(width - rs(52), rs(290)),
+    height: rs(52),
     borderRadius: 14,
     backgroundColor: '#2F8AC1',
     alignItems: 'center',
@@ -193,7 +197,7 @@ const styles = StyleSheet.create({
   },
   registerButtonText: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: rs(20),
     fontWeight: '600',
   },
   pressed: {

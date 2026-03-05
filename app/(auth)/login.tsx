@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/store/authStore';
+
+const { width, height } = Dimensions.get('window');
+const uiScale = Math.max(0.78, Math.min(Math.min(width / 390, height / 844), 1.15));
+const rs = (value: number) => Math.round(value * uiScale);
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -100,61 +104,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F2F2F2',
-    paddingHorizontal: 24,
-    paddingTop: 56,
+    paddingHorizontal: rs(20),
+    paddingTop: rs(42),
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: rs(34),
+    height: rs(34),
     justifyContent: 'center',
   },
   backText: {
-    fontSize: 28,
+    fontSize: rs(24),
     color: '#12122E',
   },
   logoWrap: {
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 32,
+    marginTop: rs(6),
+    marginBottom: rs(24),
   },
   logoImage: {
-    width: 140,
-    height: 108,
+    width: rs(112),
+    height: rs(86),
   },
   appName: {
-    marginTop: 4,
-    fontSize: 48,
+    marginTop: rs(4),
+    fontSize: rs(34),
     fontWeight: '700',
     color: '#2F8AC1',
   },
   title: {
     textAlign: 'center',
-    fontSize: 42,
+    fontSize: rs(30),
     fontWeight: '700',
     color: '#2F8AC1',
-    marginBottom: 26,
+    marginBottom: rs(18),
   },
   form: {
     width: '100%',
-    maxWidth: 560,
+    maxWidth: 520,
     alignSelf: 'center',
-    gap: 18,
+    gap: rs(12),
   },
   input: {
-    height: 62,
+    height: rs(52),
     borderWidth: 2,
     borderColor: '#2F8AC1',
     borderRadius: 8,
-    paddingHorizontal: 18,
-    fontSize: 31,
+    paddingHorizontal: rs(14),
+    fontSize: rs(18),
     color: '#12122E',
     backgroundColor: '#F2F2F2',
   },
   loginButton: {
-    marginTop: 10,
+    marginTop: rs(8),
     alignSelf: 'center',
-    width: 290,
-    height: 62,
+    width: Math.min(width - rs(52), rs(290)),
+    height: rs(54),
     borderRadius: 14,
     backgroundColor: '#2F8AC1',
     alignItems: 'center',
@@ -162,7 +166,7 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#FFFFFF',
-    fontSize: 30,
+    fontSize: rs(20),
     fontWeight: '600',
   },
   pressed: {

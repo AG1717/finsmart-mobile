@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,9 @@ import { ProgressCircle } from '../../src/components/goal/ProgressCircle';
 import { useAuthStore } from '../../src/store/authStore';
 
 type DashboardTab = 'overview' | 'short' | 'long' | 'suggestion';
+const { width, height } = Dimensions.get('window');
+const uiScale = Math.max(0.78, Math.min(Math.min(width / 390, height / 844), 1.1));
+const rs = (value: number) => Math.round(value * uiScale);
 
 const kpiIcons = {
   achieved: require('../../assets/icone-achieved.jpeg'),
@@ -55,9 +58,9 @@ export default function DashboardScreen() {
         <TouchableOpacity onPress={() => router.push('/(auth)/welcome')}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Dashboad</Text>
+        <Text style={styles.headerTitle}>Dashboard</Text>
         <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-          <Ionicons name="person-circle-outline" size={34} color="#18133E" />
+          <Ionicons name="person-circle-outline" size={rs(30)} color="#18133E" />
         </TouchableOpacity>
       </View>
 
@@ -106,9 +109,9 @@ export default function DashboardScreen() {
           <TouchableOpacity key={goal._id} style={styles.goalCard} onPress={() => router.push(`/goal/${goal._id}` as any)}>
             <View style={styles.goalCardTop}>
               <View style={styles.goalIconCircle}>
-                <Ionicons name={(goal.icon as any) || 'wallet-outline'} size={26} color="#6A6A6A" />
+                <Ionicons name={(goal.icon as any) || 'wallet-outline'} size={rs(22)} color="#6A6A6A" />
               </View>
-              <ProgressCircle percentage={goal.progress?.percentage || 0} size={56} strokeWidth={5} color="#52D38F" />
+              <ProgressCircle percentage={goal.progress?.percentage || 0} size={rs(52)} strokeWidth={5} color="#52D38F" />
             </View>
 
             <Text style={styles.goalName} numberOfLines={1}>
@@ -156,7 +159,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F2',
   },
   contentContainer: {
-    paddingBottom: 24,
+    paddingBottom: rs(24),
   },
   loadingContainer: {
     flex: 1,
@@ -165,69 +168,69 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F2',
   },
   header: {
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    paddingTop: rs(46),
+    paddingHorizontal: rs(14),
+    paddingBottom: rs(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   backArrow: {
-    fontSize: 28,
+    fontSize: rs(24),
     color: '#111111',
   },
   headerTitle: {
-    fontSize: 34,
+    fontSize: rs(30),
     fontWeight: '700',
     color: '#101033',
   },
   kpiCard: {
-    height: 212,
-    marginHorizontal: 16,
+    height: rs(194),
+    marginHorizontal: rs(14),
     overflow: 'hidden',
     borderRadius: 0,
   },
   kpiContent: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingHorizontal: rs(10),
+    paddingTop: rs(8),
   },
   kpiTopLabel: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: rs(15),
     fontWeight: '500',
     marginBottom: 4,
   },
   kpiAmount: {
     color: '#FFFFFF',
-    fontSize: 50,
+    fontSize: rs(34),
     fontWeight: '700',
   },
   kpiTarget: {
-    fontSize: 34,
+    fontSize: rs(24),
     fontWeight: '600',
     color: 'rgba(255,255,255,0.75)',
   },
   kpiRow: {
-    marginTop: 8,
+    marginTop: rs(6),
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   kpiBadge: {
     alignItems: 'center',
-    width: 76,
+    width: rs(72),
   },
   kpiCircleWrap: {
-    width: 56,
-    height: 56,
+    width: rs(52),
+    height: rs(52),
     alignItems: 'center',
     justifyContent: 'center',
   },
   kpiImageWrap: {
     position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: rs(30),
+    height: rs(30),
+    borderRadius: rs(15),
     overflow: 'hidden',
   },
   kpiImage: {
@@ -235,50 +238,50 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   kpiLabel: {
-    marginTop: 6,
+    marginTop: rs(4),
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: rs(13),
     fontWeight: '500',
     textAlign: 'center',
   },
   goalsHeader: {
-    marginTop: 18,
-    marginHorizontal: 16,
+    marginTop: rs(14),
+    marginHorizontal: rs(14),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   goalsTitle: {
-    fontSize: 48,
+    fontSize: rs(32),
     fontWeight: '700',
     color: '#15153F',
   },
   addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: rs(44),
+    height: rs(44),
+    borderRadius: rs(22),
     backgroundColor: '#2F8AC1',
     alignItems: 'center',
     justifyContent: 'center',
   },
   addButtonText: {
     color: '#FFFFFF',
-    fontSize: 36,
+    fontSize: rs(30),
     fontWeight: '600',
     marginTop: -2,
   },
   tabsRow: {
-    marginTop: 14,
-    marginHorizontal: 16,
+    marginTop: rs(12),
+    marginHorizontal: rs(14),
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: rs(6),
   },
   tabPill: {
     backgroundColor: '#E8E8EA',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 42,
+    borderRadius: rs(10),
+    paddingHorizontal: rs(12),
+    height: rs(38),
     justifyContent: 'center',
   },
   tabPillActive: {
@@ -286,25 +289,25 @@ const styles = StyleSheet.create({
   },
   tabPillText: {
     color: '#1D1D1D',
-    fontSize: 22,
+    fontSize: rs(14),
     fontWeight: '500',
   },
   tabPillTextActive: {
     color: '#FFFFFF',
   },
   grid: {
-    marginTop: 16,
-    marginHorizontal: 16,
+    marginTop: rs(14),
+    marginHorizontal: rs(14),
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 12,
+    rowGap: rs(10),
   },
   goalCard: {
     width: '48.3%',
     backgroundColor: '#F9F9FA',
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: rs(10),
+    padding: rs(9),
     borderWidth: 1,
     borderColor: '#E5E5E7',
   },
@@ -312,37 +315,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: rs(7),
   },
   goalIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: rs(46),
+    height: rs(46),
+    borderRadius: rs(23),
     backgroundColor: '#EFEFF2',
     alignItems: 'center',
     justifyContent: 'center',
   },
   goalName: {
-    fontSize: 30,
+    fontSize: rs(18),
     fontWeight: '700',
     color: '#0F0F11',
-    marginBottom: 2,
+    marginBottom: rs(2),
   },
   goalDate: {
-    fontSize: 15,
+    fontSize: rs(12),
     color: '#8A8A94',
-    marginBottom: 4,
+    marginBottom: rs(3),
   },
   goalAmountLine: {
-    fontSize: 16,
+    fontSize: rs(13),
   },
   goalCurrent: {
-    fontSize: 17,
+    fontSize: rs(13),
     color: '#1C96D6',
     fontWeight: '700',
   },
   goalTarget: {
-    fontSize: 17,
+    fontSize: rs(13),
     color: '#767676',
     fontWeight: '500',
   },

@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, BackHandler, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform, BackHandler, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+
+const { width, height } = Dimensions.get('window');
+const uiScale = Math.max(0.78, Math.min(Math.min(width / 390, height / 844), 1.2));
+const rs = (value: number) => Math.round(value * uiScale);
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -64,15 +68,15 @@ const styles = StyleSheet.create({
     flex: 0.46,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 22,
+    paddingTop: rs(22),
   },
   logoImage: {
-    width: 128,
-    height: 98,
-    marginBottom: 8,
+    width: rs(128),
+    height: rs(98),
+    marginBottom: rs(8),
   },
   appName: {
-    fontSize: 56,
+    fontSize: rs(42),
     fontWeight: '700',
     color: '#2F8AC1',
     letterSpacing: 0.4,
@@ -80,25 +84,25 @@ const styles = StyleSheet.create({
   bottomCurve: {
     flex: 0.54,
     backgroundColor: '#2F8AC1',
-    borderTopLeftRadius: 240,
-    borderTopRightRadius: 240,
-    paddingHorizontal: 26,
-    paddingTop: 86,
+    borderTopLeftRadius: rs(180),
+    borderTopRightRadius: rs(180),
+    paddingHorizontal: rs(26),
+    paddingTop: rs(72),
   },
   tagline: {
     color: '#FFFFFF',
-    fontSize: 47,
+    fontSize: rs(34),
     fontWeight: '700',
-    lineHeight: 58,
+    lineHeight: rs(42),
     textAlign: 'center',
-    marginBottom: 52,
+    marginBottom: rs(40),
   },
   button: {
-    borderRadius: 14,
-    height: 60,
+    borderRadius: rs(14),
+    height: rs(54),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: rs(12),
   },
   outlineButton: {
     borderWidth: 2,
@@ -110,12 +114,12 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     color: '#FFFFFF',
-    fontSize: 30,
+    fontSize: rs(22),
     fontWeight: '600',
   },
   solidButtonText: {
     color: '#111111',
-    fontSize: 30,
+    fontSize: rs(22),
     fontWeight: '600',
   },
   pressed: {
