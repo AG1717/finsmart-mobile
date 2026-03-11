@@ -69,6 +69,14 @@ export const goalsApi = {
   },
 
   /**
+   * Réinitialiser tous les objectifs (compteurs à zéro)
+   */
+  resetGoals: async (): Promise<{ modifiedCount: number }> => {
+    const response = await apiClient.post<ApiResponse<{ modifiedCount: number }>>('/goals/reset');
+    return response.data.data;
+  },
+
+  /**
    * Ajouter une contribution
    */
   addContribution: async (id: string, amount: number, note?: string): Promise<Goal> => {

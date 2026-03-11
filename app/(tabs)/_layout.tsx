@@ -66,14 +66,26 @@ export default function TabsLayout() {
 
   // Web - bloquer le bouton retour du navigateur
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (
+      typeof window === 'undefined' ||
+      !window.history ||
+      typeof window.history.pushState !== 'function'
+    ) return;
 
     // Pousser un état initial pour avoir quelque chose à "revenir"
-    window.history.pushState({ tab: true }, '', window.location.href);
+    try {
+      window.history.pushState({ tab: true }, '', window.location.href);
+    } catch (e) {
+      // pushState may throw in some environments; ignore safely
+    }
 
     const handlePopState = () => {
       // Immédiatement repousser un état pour bloquer la navigation
-      window.history.pushState({ tab: true }, '', window.location.href);
+      try {
+        window.history.pushState({ tab: true }, '', window.location.href);
+      } catch (e) {
+        // ignore
+      }
       // Ensuite gérer la navigation interne
       goBack();
     };
@@ -145,6 +157,7 @@ export default function TabsLayout() {
         },
         headerLeft: () => <HeaderBackButton />,
         tabBarStyle: {
+          display: 'none',
           borderTopWidth: 1,
           borderTopColor: COLORS.gray[200],
           height: 60,
@@ -157,6 +170,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: t('dashboard.title'),
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),

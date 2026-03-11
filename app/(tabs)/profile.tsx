@@ -1,17 +1,28 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/store/authStore';
 import { saveLanguage } from '../../src/utils/i18n';
 import { COLORS } from '../../src/utils/constants';
 import { Button } from '../../src/components/common/Button';
+import { goalsApi } from '../../src/services/api/goalsApi';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [isResettingGoals, setIsResettingGoals] = useState(false);
+
+  const displayName =
+    user?.username?.trim() ||
+    user?.profile?.firstName?.trim() ||
+    user?.email?.split('@')[0] ||
+    'Utilisateur';
+  const avatarUrl = user?.profile?.avatar?.trim() || '';
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -37,6 +48,58 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleResetGoals = () => {
+    const confirmReset = async () => {
+      try {
+        setIsResettingGoals(true);
+        await goalsApi.resetGoals();
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+          queryClient.invalidateQueries({ queryKey: ['goals'] }),
+        ]);
+        if (Platform.OS === 'web') {
+          window.alert(t('profile.resetGoalsSuccess'));
+        } else {
+          Alert.alert(t('common.success'), t('profile.resetGoalsSuccess'));
+        }
+      } catch (error: any) {
+        const status = error?.response?.status;
+        const serverMessage =
+          error?.response?.data?.error?.message ||
+          error?.response?.data?.message;
+        const errorText = serverMessage
+          ? `${serverMessage}${status ? ` (HTTP ${status})` : ''}`
+          : `${t('profile.resetGoalsError')}${status ? ` (HTTP ${status})` : ''}`;
+        if (Platform.OS === 'web') {
+          window.alert(errorText);
+        } else {
+          Alert.alert(t('common.error'), errorText);
+        }
+      } finally {
+        setIsResettingGoals(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(t('profile.resetGoalsConfirmBody'))) {
+        confirmReset();
+      }
+    } else {
+      Alert.alert(
+        t('profile.resetGoalsConfirmTitle'),
+        t('profile.resetGoalsConfirmBody'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('profile.resetGoalsConfirmAction'),
+            style: 'destructive',
+            onPress: confirmReset,
+          },
+        ]
+      );
+    }
+  };
+
   const changeLanguage = async (lang: string) => {
     await i18n.changeLanguage(lang);
     await saveLanguage(lang);
@@ -45,18 +108,26 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('profile.title')}</Text>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={28} color="#18133E" />
+          </TouchableOpacity>
+          <Text style={styles.title}>{t('profile.title')}</Text>
+          <View style={styles.spacerHeader} />
+        </View>
       </View>
 
       {/* User Info */}
       <View style={styles.section}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.username.charAt(0).toUpperCase()}
-            </Text>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <Ionicons name="person" size={40} color={COLORS.white} />
+            )}
           </View>
-          <Text style={styles.username}>{user?.username}</Text>
+          <Text style={styles.username}>{displayName}</Text>
           <Text style={styles.email}>{user?.email}</Text>
         </View>
       </View>
@@ -125,6 +196,14 @@ export default function ProfileScreen() {
           variant="danger"
           fullWidth
         />
+        <Button
+          title={t('profile.resetGoals')}
+          onPress={handleResetGoals}
+          variant="outline"
+          fullWidth
+          loading={isResettingGoals}
+          style={styles.resetButton}
+        />
       </View>
     </ScrollView>
   );
@@ -139,16 +218,31 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    padding: 24,
-    paddingTop: 60,
+    paddingHorizontal: 14,
+    paddingTop: 46,
+    paddingBottom: 12,
     backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[200],
+    borderBottomWidth: 0,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.gray[900],
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#101033',
+    flex: 1,
+    textAlign: 'center',
+  },
+  spacerHeader: {
+    width: 40,
   },
   section: {
     backgroundColor: COLORS.white,
@@ -174,10 +268,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.white,
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
   },
   username: {
     fontSize: 20,
@@ -232,5 +326,8 @@ const styles = StyleSheet.create({
   },
   languageTextActive: {
     color: COLORS.white,
+  },
+  resetButton: {
+    marginTop: 12,
   },
 });

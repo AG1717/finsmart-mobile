@@ -7,23 +7,13 @@ export default function AuthLayout() {
       <Stack.Screen
         name="login"
         options={{
-          headerShown: true,
-          title: 'Connexion',
-          headerBackTitle: 'Retour',
-          headerStyle: { backgroundColor: '#FFFFFF' },
-          headerTintColor: '#3B82F6',
-          headerTitleStyle: { fontWeight: '600', color: '#1F2937' },
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="register"
         options={{
-          headerShown: true,
-          title: 'Inscription',
-          headerBackTitle: 'Retour',
-          headerStyle: { backgroundColor: '#FFFFFF' },
-          headerTintColor: '#3B82F6',
-          headerTitleStyle: { fontWeight: '600', color: '#1F2937' },
+          headerShown: false,
         }}
       />
       <Stack.Screen

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image, ScrollView, Dimensions, KeyboardAvoidingView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/store/authStore';
 
 const { width, height } = Dimensions.get('window');
@@ -18,6 +19,7 @@ export default function RegisterScreen() {
     lastName: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const showMessage = (message: string) => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -97,98 +99,121 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Pressable onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>←</Text>
-      </Pressable>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.logoWrap}>
+          <View style={styles.logoContainer}>
+            <Image source={require('../../assets/logo_new.png')} style={styles.logoImage} resizeMode="contain" />
+          </View>
+          <Text style={styles.appName}>FinSmart</Text>
+        </View>
 
-      <View style={styles.logoWrap}>
-        <Image source={require('../../assets/logo_new.png')} style={styles.logoImage} resizeMode="contain" />
-        <Text style={styles.appName}>FinSmart</Text>
-      </View>
+        <Text style={styles.title}>Create account</Text>
 
-      <Text style={styles.title}>Create account</Text>
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="Username"
+            placeholderTextColor="#A9A9B3"
+            value={formData.username}
+            onChangeText={(v) => setFormData({ ...formData, username: v })}
+            autoCapitalize="none"
+          />
 
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          placeholderTextColor="#A9A9B3"
-          value={formData.username}
-          onChangeText={(v) => setFormData({ ...formData, username: v })}
-          autoCapitalize="none"
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#A9A9B3"
+            value={formData.email}
+            onChangeText={(v) => setFormData({ ...formData, email: v })}
+            autoCapitalize="none"
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#A9A9B3"
-          value={formData.email}
-          onChangeText={(v) => setFormData({ ...formData, email: v })}
-          autoCapitalize="none"
-        />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Password"
+              placeholderTextColor="#A9A9B3"
+              value={formData.password}
+              onChangeText={(v) => setFormData({ ...formData, password: v })}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity 
+              style={styles.eyeButton}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons 
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'} 
+                size={24} 
+                color="#2F8AC1" 
+              />
+            </TouchableOpacity>
+          </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#A9A9B3"
-          value={formData.password}
-          onChangeText={(v) => setFormData({ ...formData, password: v })}
-          secureTextEntry
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="First name (optional)"
+            placeholderTextColor="#A9A9B3"
+            value={formData.firstName}
+            onChangeText={(v) => setFormData({ ...formData, firstName: v })}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="First name (optional)"
-          placeholderTextColor="#A9A9B3"
-          value={formData.firstName}
-          onChangeText={(v) => setFormData({ ...formData, firstName: v })}
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Last name (optional)"
+            placeholderTextColor="#A9A9B3"
+            value={formData.lastName}
+            onChangeText={(v) => setFormData({ ...formData, lastName: v })}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Last name (optional)"
-          placeholderTextColor="#A9A9B3"
-          value={formData.lastName}
-          onChangeText={(v) => setFormData({ ...formData, lastName: v })}
-        />
-
-        <Pressable style={({ pressed }) => [styles.registerButton, pressed && styles.pressed]} onPress={handleRegister} disabled={loading}>
-          <Text style={styles.registerButtonText}>{loading ? 'Loading...' : 'Sign Up'}</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+          <Pressable style={({ pressed }) => [styles.registerButton, pressed && styles.pressed]} onPress={handleRegister} disabled={loading}>
+            <Text style={styles.registerButtonText}>{loading ? 'Loading...' : 'Sign Up'}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: '100%' as any,
-    backgroundColor: '#F2F2F2',
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: rs(20),
     paddingTop: rs(42),
     paddingBottom: rs(24),
-  },
-  backButton: {
-    width: rs(34),
-    height: rs(34),
     justifyContent: 'center',
-  },
-  backText: {
-    fontSize: rs(24),
-    color: '#12122E',
   },
   logoWrap: {
     alignItems: 'center',
-    marginTop: rs(6),
-    marginBottom: rs(20),
+    marginTop: rs(-40),
+    marginBottom: rs(32),
+  },
+  logoContainer: {
+    width: rs(333),
+    height: rs(256),
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: rs(-16),
+    borderRadius: rs(12),
   },
   logoImage: {
-    width: rs(108),
-    height: rs(78),
+    width: '100%',
+    height: '100%',
   },
   appName: {
-    marginTop: rs(4),
+    marginTop: rs(-8),
     fontSize: rs(32),
     fontWeight: '700',
     color: '#2F8AC1',
@@ -198,13 +223,13 @@ const styles = StyleSheet.create({
     fontSize: rs(27),
     fontWeight: '700',
     color: '#2F8AC1',
-    marginBottom: rs(14),
+    marginBottom: rs(28),
   },
   form: {
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
-    gap: rs(10),
+    gap: rs(16),
   },
   input: {
     height: rs(50),
@@ -214,10 +239,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(14),
     fontSize: rs(18),
     color: '#12122E',
-    backgroundColor: '#F2F2F2',
+    backgroundColor: '#FFFFFF',
+  },
+  passwordContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  passwordInput: {
+    height: rs(50),
+    borderWidth: 2,
+    borderColor: '#2F8AC1',
+    borderRadius: 8,
+    paddingHorizontal: rs(14),
+    paddingRight: rs(50),
+    fontSize: rs(18),
+    color: '#12122E',
+    backgroundColor: '#FFFFFF',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: rs(12),
+    height: rs(50),
+    justifyContent: 'center',
+    paddingHorizontal: rs(8),
   },
   registerButton: {
-    marginTop: rs(6),
+    marginTop: rs(8),
     alignSelf: 'center',
     width: Math.min(width - rs(52), rs(290)),
     height: rs(52),

@@ -34,7 +34,9 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.topSection}>
-        <Image source={require('../../assets/logo_new.png')} style={styles.logoImage} resizeMode="contain" />
+        <View style={styles.logoContainer}>
+          <Image source={require('../../assets/logo_new.png')} style={styles.logoImage} resizeMode="contain" />
+        </View>
         <Text style={styles.appName}>FinSmart</Text>
       </View>
 
@@ -71,16 +73,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: rs(22),
   },
+  logoContainer: {
+    width: rs(333),
+    height: rs(256),
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: rs(-16),
+    borderRadius: rs(12),
+  },
   logoImage: {
-    width: rs(128),
-    height: rs(98),
-    marginBottom: rs(8),
+    width: '100%',
+    height: '100%',
   },
   appName: {
     fontSize: rs(42),
     fontWeight: '700',
     color: '#2F8AC1',
     letterSpacing: 0.4,
+    marginTop: rs(-8),
   },
   bottomCurve: {
     flex: 0.54,

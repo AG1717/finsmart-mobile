@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,17 +25,18 @@ export default function CreateGoalScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
+  const params = useLocalSearchParams();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    targetAmount: '',
+    name: (params.name as string) || '',
+    description: (params.description as string) || '',
+    targetAmount: (params.targetAmount as string) || '',
     currentAmount: '0',
     targetDate: '',
-    timeframe: 'short' as Timeframe,
-    category: 'necessity' as Category,
-    icon: 'star',
+    timeframe: (params.timeframe as Timeframe) || 'short' as Timeframe,
+    category: (params.category as Category) || 'necessity' as Category,
+    icon: (params.icon as string) || 'star',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
