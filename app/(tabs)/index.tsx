@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image, Dimensions, Modal, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { formatCurrency } from '../../src/utils/helpers/formatters';
 import { ProgressCircle } from '../../src/components/goal/ProgressCircle';
 import { useAuthStore } from '../../src/store/authStore';
 import { useTranslation } from 'react-i18next';
+import { ModalAlert } from '../../src/components/common/ModalAlert';
 
 type DashboardTab = 'overview' | 'short' | 'long' | 'suggestion';
 const { width, height } = Dimensions.get('window');
@@ -34,6 +35,45 @@ export default function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [isResettingGoals, setIsResettingGoals] = useState(false);
+  const [alertModal, setAlertModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    variant: 'info' as const,
+    primaryLabel: 'OK',
+    secondaryLabel: undefined as undefined | string,
+    onPrimary: undefined as undefined | (() => void),
+    onSecondary: undefined as undefined | (() => void),
+  });
+
+  const closeAlert = () => setAlertModal((prev) => ({ ...prev, visible: false }));
+  const showAlert = (title: string, message: string, variant: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      variant,
+      primaryLabel: t('common.confirm') || 'OK',
+      secondaryLabel: undefined,
+      onPrimary: closeAlert,
+      onSecondary: undefined,
+    });
+  };
+  const confirmAlert = (title: string, message: string, onConfirm: () => void) => {
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      variant: 'warning',
+      primaryLabel: t('common.confirm') || 'Confirm',
+      secondaryLabel: t('common.cancel') || 'Cancel',
+      onPrimary: () => {
+        closeAlert();
+        onConfirm();
+      },
+      onSecondary: closeAlert,
+    });
+  };
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['dashboard'],
@@ -114,11 +154,7 @@ export default function DashboardScreen() {
           queryClient.invalidateQueries({ queryKey: ['goals'] }),
         ]);
         setProfileModalVisible(false);
-        if (Platform.OS === 'web') {
-          window.alert(t('profile.resetGoalsSuccess') || 'Goals reset successfully');
-        } else {
-          Alert.alert(t('common.success') || 'Success', t('profile.resetGoalsSuccess') || 'Goals reset successfully');
-        }
+        showAlert(t('common.success') || 'Success', t('profile.resetGoalsSuccess') || 'Goals reset successfully', 'success');
       } catch (error: any) {
         const status = error?.response?.status;
         const serverMessage =
@@ -127,58 +163,28 @@ export default function DashboardScreen() {
         const errorText = serverMessage
           ? `${serverMessage}${status ? ` (HTTP ${status})` : ''}`
           : `${t('profile.resetGoalsError') || 'Error resetting goals'}${status ? ` (HTTP ${status})` : ''}`;
-        if (Platform.OS === 'web') {
-          window.alert(errorText);
-        } else {
-          Alert.alert(t('common.error') || 'Error', errorText);
-        }
+        showAlert(t('common.error') || 'Error', errorText, 'error');
       } finally {
         setIsResettingGoals(false);
       }
     };
 
-    if (Platform.OS === 'web') {
-      if (window.confirm(t('profile.resetGoalsConfirmBody') || 'Are you sure you want to reset all goals?')) {
-        confirmReset();
-      }
-    } else {
-      Alert.alert(
-        t('profile.resetGoalsConfirmTitle') || 'Reset Goals',
-        t('profile.resetGoalsConfirmBody') || 'Are you sure you want to reset all goals? This action cannot be undone.',
-        [
-          { text: t('common.cancel') || 'Cancel', style: 'cancel' },
-          {
-            text: t('profile.resetGoalsConfirmAction') || 'Reset',
-            style: 'destructive',
-            onPress: confirmReset,
-          },
-        ]
-      );
-    }
+    confirmAlert(
+      t('profile.resetGoalsConfirmTitle') || 'Reset Goals',
+      t('profile.resetGoalsConfirmBody') || 'Are you sure you want to reset all goals? This action cannot be undone.',
+      confirmReset
+    );
   };
 
   const handleLogout = () => {
-    if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to logout?')) {
-        logout().then(() => router.replace('/(auth)/welcome'));
+    confirmAlert(
+      t('auth.logout') || 'Logout',
+      'Are you sure you want to logout?',
+      async () => {
+        await logout();
+        router.replace('/(auth)/welcome');
       }
-    } else {
-      Alert.alert(
-        t('auth.logout') || 'Logout',
-        'Are you sure you want to logout?',
-        [
-          { text: t('common.cancel') || 'Cancel', style: 'cancel' },
-          {
-            text: t('auth.logout') || 'Logout',
-            style: 'destructive',
-            onPress: async () => {
-              await logout();
-              router.replace('/(auth)/welcome');
-            },
-          },
-        ]
-      );
-    }
+    );
   };
 
   const filteredGoals = useMemo(() => {
@@ -283,6 +289,17 @@ export default function DashboardScreen() {
   return (
     <>
       <View style={styles.container}>
+        <ModalAlert
+          visible={alertModal.visible}
+          title={alertModal.title}
+          message={alertModal.message}
+          variant={alertModal.variant}
+          primaryLabel={alertModal.primaryLabel}
+          secondaryLabel={alertModal.secondaryLabel}
+          onPrimary={alertModal.onPrimary}
+          onSecondary={alertModal.onSecondary}
+          onClose={closeAlert}
+        />
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Dashboard</Text>
@@ -414,6 +431,7 @@ export default function DashboardScreen() {
       user={user}
       queryClient={queryClient}
       onUserUpdated={setUser}
+      onShowAlert={showAlert}
     />
     </>
   );
@@ -455,6 +473,7 @@ interface ProfileModalProps {
   user: any;
   queryClient: any;
   onUserUpdated: (user: any) => void;
+  onShowAlert: (title: string, message: string, variant?: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
 function ProfileModal({
@@ -471,6 +490,7 @@ function ProfileModal({
   user,
   queryClient,
   onUserUpdated,
+  onShowAlert,
 }: ProfileModalProps) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -499,17 +519,9 @@ function ProfileModal({
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
         queryClient.invalidateQueries({ queryKey: ['goals'] }),
       ]);
-      if (Platform.OS === 'web') {
-        window.alert(t('profile.currencyChanged') || 'Currency changed successfully');
-      } else {
-        Alert.alert(t('common.success') || 'Success', t('profile.currencyChanged') || 'Currency changed successfully');
-      }
+      onShowAlert(t('common.success') || 'Success', t('profile.currencyChanged') || 'Currency changed successfully', 'success');
     } catch (error) {
-      if (Platform.OS === 'web') {
-        window.alert(t('common.error') || 'Error');
-      } else {
-        Alert.alert(t('common.error') || 'Error', t('common.error') || 'Error');
-      }
+      onShowAlert(t('common.error') || 'Error', t('common.error') || 'Error', 'error');
     }
   };
 

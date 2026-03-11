@@ -6,6 +6,7 @@ import { Input } from '../../src/components/common/Input';
 import { Button } from '../../src/components/common/Button';
 import { COLORS } from '../../src/utils/constants';
 import { authApi } from '../../src/services/api/authApi';
+import { ModalAlert } from '../../src/components/common/ModalAlert';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -19,14 +20,22 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [modal, setModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    variant: 'info' as const,
+  });
+
+  const closeModal = () => setModal((prev) => ({ ...prev, visible: false }));
 
   const showAlert = (title: string, message: string) => {
-    if (Platform.OS === 'web') {
-      window.alert(`${title}\n${message}`);
-    } else {
-      const { Alert } = require('react-native');
-      Alert.alert(title, message);
-    }
+    setModal({
+      visible: true,
+      title,
+      message,
+      variant: title === t('common.error') ? 'error' : 'success',
+    });
   };
 
   const handleSendCode = async () => {
@@ -96,6 +105,13 @@ export default function ForgotPasswordScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <ModalAlert
+        visible={modal.visible}
+        title={modal.title}
+        message={modal.message}
+        variant={modal.variant}
+        onClose={closeModal}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>{t('auth.forgotPasswordTitle')}</Text>

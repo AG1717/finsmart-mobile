@@ -6,8 +6,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
-  Platform,
   ActivityIndicator,
   Modal,
 } from 'react-native';
@@ -20,6 +18,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import { ProgressCircle } from '../../src/components/goal/ProgressCircle';
 import { formatCurrency, formatDate } from '../../src/utils/helpers/formatters';
 import { Button } from '../../src/components/common/Button';
+import { ModalAlert } from '../../src/components/common/ModalAlert';
 import { COLORS, CATEGORY_INFO, GOAL_ICONS } from '../../src/utils/constants';
 import { Category, Timeframe } from '../../src/types';
 
@@ -35,6 +34,16 @@ export default function GoalDetailScreen() {
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [contributeLoading, setContributeLoading] = useState(false);
+  const [alertModal, setAlertModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    variant: 'info' as const,
+    primaryLabel: 'OK',
+    secondaryLabel: undefined as undefined | string,
+    onPrimary: undefined as undefined | (() => void),
+    onSecondary: undefined as undefined | (() => void),
+  });
 
   const [contributionAmount, setContributionAmount] = useState('');
   const [contributionNote, setContributionNote] = useState('');
@@ -56,25 +65,35 @@ export default function GoalDetailScreen() {
     enabled: !!id,
   });
 
-  const showAlert = (title: string, message: string) => {
-    if (Platform.OS === 'web') {
-      window.alert(message);
-    } else {
-      Alert.alert(title, message);
-    }
+  const closeAlert = () => setAlertModal((prev) => ({ ...prev, visible: false }));
+
+  const showAlert = (title: string, message: string, variant: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      variant,
+      primaryLabel: t('common.confirm'),
+      secondaryLabel: undefined,
+      onPrimary: closeAlert,
+      onSecondary: undefined,
+    });
   };
 
   const confirmAction = (title: string, message: string, onConfirm: () => void) => {
-    if (Platform.OS === 'web') {
-      if (window.confirm(message)) {
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      variant: 'warning',
+      primaryLabel: t('common.confirm'),
+      secondaryLabel: t('common.cancel'),
+      onPrimary: () => {
+        closeAlert();
         onConfirm();
-      }
-    } else {
-      Alert.alert(title, message, [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.confirm'), style: 'destructive', onPress: onConfirm },
-      ]);
-    }
+      },
+      onSecondary: closeAlert,
+    });
   };
 
   const handleDelete = () => {
@@ -84,10 +103,10 @@ export default function GoalDetailScreen() {
         await goalsApi.deleteGoal(id!);
         queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         queryClient.invalidateQueries({ queryKey: ['goals'] });
-        showAlert('Success', 'Goal deleted successfully');
+        showAlert('Success', 'Goal deleted successfully', 'success');
         router.back();
       } catch (error: any) {
-        showAlert('Error', error.response?.data?.error?.message || 'Failed to delete goal');
+        showAlert('Error', error.response?.data?.error?.message || 'Failed to delete goal', 'error');
       } finally {
         setDeleteLoading(false);
       }
@@ -111,12 +130,12 @@ export default function GoalDetailScreen() {
 
   const handleUpdate = async () => {
     if (!editData.name.trim()) {
-      showAlert('Error', 'Goal name is required');
+      showAlert('Error', 'Goal name is required', 'error');
       return;
     }
     const targetAmount = parseFloat(editData.targetAmount);
     if (isNaN(targetAmount) || targetAmount <= 0) {
-      showAlert('Error', 'Target amount must be greater than 0');
+      showAlert('Error', 'Target amount must be greater than 0', 'error');
       return;
     }
 
@@ -140,9 +159,9 @@ export default function GoalDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       setShowEditModal(false);
-      showAlert('Success', 'Goal updated successfully');
+      showAlert('Success', 'Goal updated successfully', 'success');
     } catch (error: any) {
-      showAlert('Error', error.response?.data?.error?.message || 'Failed to update goal');
+      showAlert('Error', error.response?.data?.error?.message || 'Failed to update goal', 'error');
     } finally {
       setEditLoading(false);
     }
@@ -151,7 +170,7 @@ export default function GoalDetailScreen() {
   const handleContribute = async () => {
     const amount = parseFloat(contributionAmount);
     if (isNaN(amount) || amount <= 0) {
-      showAlert('Error', 'Please enter a valid amount');
+      showAlert('Error', 'Please enter a valid amount', 'error');
       return;
     }
 
@@ -165,9 +184,9 @@ export default function GoalDetailScreen() {
       setShowContributeModal(false);
       setContributionAmount('');
       setContributionNote('');
-      showAlert('Success', `Added ${user?.preferences?.currency?.symbol || '$'}${amount} to your goal!`);
+      showAlert('Success', `Added ${user?.preferences?.currency?.symbol || '$'}${amount} to your goal!`, 'success');
     } catch (error: any) {
-      showAlert('Error', error.response?.data?.error?.message || 'Failed to add contribution');
+      showAlert('Error', error.response?.data?.error?.message || 'Failed to add contribution', 'error');
     } finally {
       setContributeLoading(false);
     }
@@ -194,6 +213,17 @@ export default function GoalDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <ModalAlert
+        visible={alertModal.visible}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+        primaryLabel={alertModal.primaryLabel}
+        secondaryLabel={alertModal.secondaryLabel}
+        onPrimary={alertModal.onPrimary}
+        onSecondary={alertModal.onSecondary}
+        onClose={closeAlert}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Goal Header */}
         <View style={styles.goalHeader}>

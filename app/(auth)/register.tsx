@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Alert, Platform, Image, ScrollView, Dimensions, KeyboardAvoidingView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Platform, Image, ScrollView, Dimensions, KeyboardAvoidingView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/store/authStore';
+import { ModalAlert } from '../../src/components/common/ModalAlert';
 
 const { width, height } = Dimensions.get('window');
 const uiScale = Math.max(0.78, Math.min(Math.min(width / 390, height / 844), 1.15));
@@ -20,13 +21,22 @@ export default function RegisterScreen() {
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [modal, setModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    variant: 'info' as const,
+  });
+
+  const closeModal = () => setModal((prev) => ({ ...prev, visible: false }));
 
   const showMessage = (message: string) => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.alert(message);
-    } else {
-      Alert.alert('Error', message);
-    }
+    setModal({
+      visible: true,
+      title: 'Error',
+      message,
+      variant: 'error',
+    });
   };
 
   const handleRegister = async () => {
@@ -103,6 +113,13 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
+      <ModalAlert
+        visible={modal.visible}
+        title={modal.title}
+        message={modal.message}
+        variant={modal.variant}
+        onClose={closeModal}
+      />
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

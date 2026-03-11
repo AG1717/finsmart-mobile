@@ -6,7 +6,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
@@ -17,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { goalsApi } from '../../src/services/api/goalsApi';
 import { useAuthStore } from '../../src/store/authStore';
 import { Button } from '../../src/components/common/Button';
+import { ModalAlert } from '../../src/components/common/ModalAlert';
 import { COLORS, GOAL_ICONS } from '../../src/utils/constants';
 import { Category, Timeframe } from '../../src/types';
 
@@ -39,6 +39,19 @@ export default function CreateGoalScreen() {
     icon: (params.icon as string) || 'star',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [modal, setModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    variant: 'info' as const,
+    onClose: undefined as undefined | (() => void),
+  });
+
+  const closeModal = () => {
+    const action = modal.onClose;
+    setModal((prev) => ({ ...prev, visible: false, onClose: undefined }));
+    if (action) action();
+  };
 
   const handleDateInput = (text: string) => {
     const cleaned = text.replace(/[^\d]/g, '');
@@ -123,20 +136,21 @@ export default function CreateGoalScreen() {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
 
       const msg = 'Goal created successfully!';
-      if (Platform.OS === 'web') {
-        window.alert(msg);
-      } else {
-        Alert.alert('Success', msg);
-      }
-
-      router.back();
+      setModal({
+        visible: true,
+        title: 'Success',
+        message: msg,
+        variant: 'success',
+        onClose: () => router.back(),
+      });
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || 'Failed to create goal';
-      if (Platform.OS === 'web') {
-        window.alert(errorMessage);
-      } else {
-        Alert.alert(t('common.error'), errorMessage);
-      }
+      setModal({
+        visible: true,
+        title: t('common.error'),
+        message: errorMessage,
+        variant: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -149,6 +163,13 @@ export default function CreateGoalScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <ModalAlert
+        visible={modal.visible}
+        title={modal.title}
+        message={modal.message}
+        variant={modal.variant}
+        onClose={closeModal}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Goal Name */}
         <Text style={styles.label}>Goal Name *</Text>

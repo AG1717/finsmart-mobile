@@ -21,6 +21,9 @@ export const ProgressCircle: React.FC<ProgressCircleProps> = ({
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const percentageText = `${Math.round(percentage)}%`;
+  const baseFontSize = Math.max(10, Math.round(size * 0.28));
+  const fontSize = percentageText.length >= 4 ? baseFontSize - 2 : baseFontSize;
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
@@ -52,8 +55,8 @@ export const ProgressCircle: React.FC<ProgressCircleProps> = ({
       </Svg>
       {showPercentage && (
         <View style={styles.percentageContainer}>
-          <Text style={[styles.percentage, { color }]}>
-            {Math.round(percentage)}%
+          <Text style={[styles.percentage, { color, fontSize, lineHeight: fontSize + 2 }]}>
+            {percentageText}
           </Text>
         </View>
       )}

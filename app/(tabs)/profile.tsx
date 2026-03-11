@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { saveLanguage } from '../../src/utils/i18n';
 import { COLORS } from '../../src/utils/constants';
 import { Button } from '../../src/components/common/Button';
 import { goalsApi } from '../../src/services/api/goalsApi';
+import { ModalAlert } from '../../src/components/common/ModalAlert';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -16,6 +17,45 @@ export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const queryClient = useQueryClient();
   const [isResettingGoals, setIsResettingGoals] = useState(false);
+  const [alertModal, setAlertModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    variant: 'info' as const,
+    primaryLabel: 'OK',
+    secondaryLabel: undefined as undefined | string,
+    onPrimary: undefined as undefined | (() => void),
+    onSecondary: undefined as undefined | (() => void),
+  });
+
+  const closeAlert = () => setAlertModal((prev) => ({ ...prev, visible: false }));
+  const showAlert = (title: string, message: string, variant: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      variant,
+      primaryLabel: t('common.confirm'),
+      secondaryLabel: undefined,
+      onPrimary: closeAlert,
+      onSecondary: undefined,
+    });
+  };
+  const confirmAlert = (title: string, message: string, onConfirm: () => void) => {
+    setAlertModal({
+      visible: true,
+      title,
+      message,
+      variant: 'warning',
+      primaryLabel: t('common.confirm'),
+      secondaryLabel: t('common.cancel'),
+      onPrimary: () => {
+        closeAlert();
+        onConfirm();
+      },
+      onSecondary: closeAlert,
+    });
+  };
 
   const displayName =
     user?.username?.trim() ||
@@ -25,27 +65,14 @@ export default function ProfileScreen() {
   const avatarUrl = user?.profile?.avatar?.trim() || '';
 
   const handleLogout = () => {
-    if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to logout?')) {
-        logout().then(() => router.replace('/(auth)/welcome'));
+    confirmAlert(
+      t('auth.logout'),
+      'Are you sure you want to logout?',
+      async () => {
+        await logout();
+        router.replace('/(auth)/welcome');
       }
-    } else {
-      Alert.alert(
-        t('auth.logout'),
-        'Are you sure you want to logout?',
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('auth.logout'),
-            style: 'destructive',
-            onPress: async () => {
-              await logout();
-              router.replace('/(auth)/welcome');
-            },
-          },
-        ]
-      );
-    }
+    );
   };
 
   const handleResetGoals = () => {
@@ -108,11 +135,7 @@ export default function ProfileScreen() {
           queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
           queryClient.invalidateQueries({ queryKey: ['goals'] }),
         ]);
-        if (Platform.OS === 'web') {
-          window.alert(t('profile.resetGoalsSuccess'));
-        } else {
-          Alert.alert(t('common.success'), t('profile.resetGoalsSuccess'));
-        }
+        showAlert(t('common.success'), t('profile.resetGoalsSuccess'), 'success');
       } catch (error: any) {
         const status = error?.response?.status;
         const serverMessage =
@@ -121,34 +144,17 @@ export default function ProfileScreen() {
         const errorText = serverMessage
           ? `${serverMessage}${status ? ` (HTTP ${status})` : ''}`
           : `${t('profile.resetGoalsError')}${status ? ` (HTTP ${status})` : ''}`;
-        if (Platform.OS === 'web') {
-          window.alert(errorText);
-        } else {
-          Alert.alert(t('common.error'), errorText);
-        }
+        showAlert(t('common.error'), errorText, 'error');
       } finally {
         setIsResettingGoals(false);
       }
     };
 
-    if (Platform.OS === 'web') {
-      if (window.confirm(t('profile.resetGoalsConfirmBody'))) {
-        confirmReset();
-      }
-    } else {
-      Alert.alert(
-        t('profile.resetGoalsConfirmTitle'),
-        t('profile.resetGoalsConfirmBody'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('profile.resetGoalsConfirmAction'),
-            style: 'destructive',
-            onPress: confirmReset,
-          },
-        ]
-      );
-    }
+    confirmAlert(
+      t('profile.resetGoalsConfirmTitle'),
+      t('profile.resetGoalsConfirmBody'),
+      confirmReset
+    );
   };
 
   const changeLanguage = async (lang: string) => {
@@ -162,6 +168,17 @@ export default function ProfileScreen() {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
+      <ModalAlert
+        visible={alertModal.visible}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+        primaryLabel={alertModal.primaryLabel}
+        secondaryLabel={alertModal.secondaryLabel}
+        onPrimary={alertModal.onPrimary}
+        onSecondary={alertModal.onSecondary}
+        onClose={closeAlert}
+      />
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
