@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from '../storage/tokenStorage';
 import { ApiError } from '../../types';
 
-const DEFAULT_PRODUCTION_API_URL = 'https://finsmart-backend.onrender.com/api/v1';
+const DEFAULT_PRODUCTION_API_URL = 'https://finsmart-backend-foc5.onrender.com/api/v1';
 const API_REQUEST_TIMEOUT_MS = 30000;
 
 const getApiUrl = () => {
