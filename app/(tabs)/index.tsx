@@ -69,7 +69,8 @@ export default function DashboardScreen() {
               totalTargetAmount: 0,
               overallProgress: 0,
               completedGoals: 0,
-              activeGoals: prev.overview?.totalGoals ?? prev.overview?.activeGoals ?? 0,
+              activeGoals: 0,
+              totalGoals: 0,
             },
             byTimeframe: {
               short: { ...prev.byTimeframe?.short, currentAmount: 0, targetAmount: 0, progress: 0 },
@@ -80,42 +81,32 @@ export default function DashboardScreen() {
               necessity: { ...prev.byCategory?.necessity, currentAmount: 0, targetAmount: 0, progress: 0 },
               lifestyle: { ...prev.byCategory?.lifestyle, currentAmount: 0, targetAmount: 0, progress: 0 },
             },
-            recentGoals: (prev.recentGoals || []).map((g: any) => ({
-              ...g,
-              amounts: { ...g.amounts, current: 0, target: 0 },
-              progress: { ...g.progress, percentage: 0 },
-              status: 'active',
-              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
-              metadata: { ...g.metadata, contributions: [], milestones: [] },
-            })),
+            recentGoals: [],
+            nearCompletion: [],
           };
         });
         queryClient.setQueryData(['goals', 'dashboard-list'], (prev: any) => {
           if (!prev?.goals) return prev;
           return {
             ...prev,
-            goals: prev.goals.map((g: any) => ({
-              ...g,
-              amounts: { ...g.amounts, current: 0, target: 0 },
-              progress: { ...g.progress, percentage: 0 },
-              status: 'active',
-              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
-              metadata: { ...g.metadata, contributions: [], milestones: [] },
-            })),
+            goals: [],
+            pagination: {
+              ...prev.pagination,
+              total: 0,
+              pages: 0,
+            },
           };
         });
         queryClient.setQueryData(['goals'], (prev: any) => {
           if (!prev?.goals) return prev;
           return {
             ...prev,
-            goals: prev.goals.map((g: any) => ({
-              ...g,
-              amounts: { ...g.amounts, current: 0, target: 0 },
-              progress: { ...g.progress, percentage: 0 },
-              status: 'active',
-              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
-              metadata: { ...g.metadata, contributions: [], milestones: [] },
-            })),
+            goals: [],
+            pagination: {
+              ...prev.pagination,
+              total: 0,
+              pages: 0,
+            },
           };
         });
         await Promise.all([
@@ -291,11 +282,7 @@ export default function DashboardScreen() {
 
   return (
     <>
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
+      <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Dashboard</Text>
@@ -356,8 +343,13 @@ export default function DashboardScreen() {
         <TabPill label="Suggestion" active={activeTab === 'suggestion'} onPress={() => setActiveTab('suggestion')} />
       </View>
 
-      <View style={styles.grid}>
-        {filteredGoals.map((goal: any) => (
+      <ScrollView
+        style={styles.goalsList}
+        contentContainerStyle={styles.goalsListContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.grid}>
+          {filteredGoals.map((goal: any) => (
           <TouchableOpacity 
             key={goal._id} 
             style={styles.goalCard} 
@@ -403,9 +395,10 @@ export default function DashboardScreen() {
               <Text style={styles.goalTarget}> of {formatCurrency(goal.amounts.target, goal.amounts.currency)}</Text>
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
 
     <ProfileModal
       visible={profileModalVisible}
@@ -679,10 +672,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2F2F2',
   },
-  contentContainer: {
-    paddingBottom: rs(96),
-    flexGrow: 1,
-  },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
@@ -817,6 +806,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: rs(6),
   },
+  goalsList: {
+    flex: 1,
+    marginTop: rs(14),
+  },
+  goalsListContent: {
+    paddingHorizontal: rs(14),
+    paddingBottom: rs(24),
+  },
   tabPill: {
     backgroundColor: '#E8E8EA',
     borderRadius: rs(10),
@@ -836,8 +833,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   grid: {
-    marginTop: rs(14),
-    marginHorizontal: rs(14),
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',

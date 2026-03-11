@@ -64,7 +64,8 @@ export default function ProfileScreen() {
               totalTargetAmount: 0,
               overallProgress: 0,
               completedGoals: 0,
-              activeGoals: prev.overview?.totalGoals ?? prev.overview?.activeGoals ?? 0,
+              activeGoals: 0,
+              totalGoals: 0,
             },
             byTimeframe: {
               short: { ...prev.byTimeframe?.short, currentAmount: 0, targetAmount: 0, progress: 0 },
@@ -75,42 +76,32 @@ export default function ProfileScreen() {
               necessity: { ...prev.byCategory?.necessity, currentAmount: 0, targetAmount: 0, progress: 0 },
               lifestyle: { ...prev.byCategory?.lifestyle, currentAmount: 0, targetAmount: 0, progress: 0 },
             },
-            recentGoals: (prev.recentGoals || []).map((g: any) => ({
-              ...g,
-              amounts: { ...g.amounts, current: 0, target: 0 },
-              progress: { ...g.progress, percentage: 0 },
-              status: 'active',
-              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
-              metadata: { ...g.metadata, contributions: [], milestones: [] },
-            })),
+            recentGoals: [],
+            nearCompletion: [],
           };
         });
         queryClient.setQueryData(['goals', 'dashboard-list'], (prev: any) => {
           if (!prev?.goals) return prev;
           return {
             ...prev,
-            goals: prev.goals.map((g: any) => ({
-              ...g,
-              amounts: { ...g.amounts, current: 0, target: 0 },
-              progress: { ...g.progress, percentage: 0 },
-              status: 'active',
-              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
-              metadata: { ...g.metadata, contributions: [], milestones: [] },
-            })),
+            goals: [],
+            pagination: {
+              ...prev.pagination,
+              total: 0,
+              pages: 0,
+            },
           };
         });
         queryClient.setQueryData(['goals'], (prev: any) => {
           if (!prev?.goals) return prev;
           return {
             ...prev,
-            goals: prev.goals.map((g: any) => ({
-              ...g,
-              amounts: { ...g.amounts, current: 0, target: 0 },
-              progress: { ...g.progress, percentage: 0 },
-              status: 'active',
-              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
-              metadata: { ...g.metadata, contributions: [], milestones: [] },
-            })),
+            goals: [],
+            pagination: {
+              ...prev.pagination,
+              total: 0,
+              pages: 0,
+            },
           };
         });
         await Promise.all([
