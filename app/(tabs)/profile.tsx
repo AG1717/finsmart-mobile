@@ -53,6 +53,66 @@ export default function ProfileScreen() {
       try {
         setIsResettingGoals(true);
         await goalsApi.resetGoals();
+        // Optimistic local reset to reflect zeroed counters immediately
+        queryClient.setQueryData(['dashboard'], (prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            overview: {
+              ...prev.overview,
+              totalCurrentAmount: 0,
+              totalTargetAmount: 0,
+              overallProgress: 0,
+              completedGoals: 0,
+              activeGoals: prev.overview?.totalGoals ?? prev.overview?.activeGoals ?? 0,
+            },
+            byTimeframe: {
+              short: { ...prev.byTimeframe?.short, currentAmount: 0, targetAmount: 0, progress: 0 },
+              long: { ...prev.byTimeframe?.long, currentAmount: 0, targetAmount: 0, progress: 0 },
+            },
+            byCategory: {
+              survival: { ...prev.byCategory?.survival, currentAmount: 0, targetAmount: 0, progress: 0 },
+              necessity: { ...prev.byCategory?.necessity, currentAmount: 0, targetAmount: 0, progress: 0 },
+              lifestyle: { ...prev.byCategory?.lifestyle, currentAmount: 0, targetAmount: 0, progress: 0 },
+            },
+            recentGoals: (prev.recentGoals || []).map((g: any) => ({
+              ...g,
+              amounts: { ...g.amounts, current: 0, target: 0 },
+              progress: { ...g.progress, percentage: 0 },
+              status: 'active',
+              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
+              metadata: { ...g.metadata, contributions: [], milestones: [] },
+            })),
+          };
+        });
+        queryClient.setQueryData(['goals', 'dashboard-list'], (prev: any) => {
+          if (!prev?.goals) return prev;
+          return {
+            ...prev,
+            goals: prev.goals.map((g: any) => ({
+              ...g,
+              amounts: { ...g.amounts, current: 0, target: 0 },
+              progress: { ...g.progress, percentage: 0 },
+              status: 'active',
+              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
+              metadata: { ...g.metadata, contributions: [], milestones: [] },
+            })),
+          };
+        });
+        queryClient.setQueryData(['goals'], (prev: any) => {
+          if (!prev?.goals) return prev;
+          return {
+            ...prev,
+            goals: prev.goals.map((g: any) => ({
+              ...g,
+              amounts: { ...g.amounts, current: 0, target: 0 },
+              progress: { ...g.progress, percentage: 0 },
+              status: 'active',
+              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
+              metadata: { ...g.metadata, contributions: [], milestones: [] },
+            })),
+          };
+        });
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
           queryClient.invalidateQueries({ queryKey: ['goals'] }),
@@ -106,7 +166,11 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -215,7 +279,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray[50],
   },
   contentContainer: {
-    paddingBottom: 100,
+    paddingBottom: 120,
+    flexGrow: 1,
   },
   header: {
     paddingHorizontal: 14,

@@ -39,6 +39,10 @@ export default function DashboardScreen() {
     queryKey: ['dashboard'],
     queryFn: goalsApi.getDashboard,
   });
+  const { data: goalsData } = useQuery({
+    queryKey: ['goals', 'dashboard-list'],
+    queryFn: () => goalsApi.getGoals({ page: 1, limit: 50 }),
+  });
 
   const displayName =
     user?.username?.trim() ||
@@ -47,13 +51,73 @@ export default function DashboardScreen() {
     'Utilisateur';
   const avatarUrl = user?.profile?.avatar?.trim() || '';
   const currency = user?.preferences.currency || { code: 'USD', symbol: '$' };
-  const allGoals = dashboard?.recentGoals || [];
+  const allGoals = goalsData?.goals?.length ? goalsData.goals : (dashboard?.recentGoals || []);
 
   const handleResetGoals = () => {
     const confirmReset = async () => {
       try {
         setIsResettingGoals(true);
         await goalsApi.resetGoals();
+        // Optimistic local reset to reflect zeroed counters immediately
+        queryClient.setQueryData(['dashboard'], (prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            overview: {
+              ...prev.overview,
+              totalCurrentAmount: 0,
+              totalTargetAmount: 0,
+              overallProgress: 0,
+              completedGoals: 0,
+              activeGoals: prev.overview?.totalGoals ?? prev.overview?.activeGoals ?? 0,
+            },
+            byTimeframe: {
+              short: { ...prev.byTimeframe?.short, currentAmount: 0, targetAmount: 0, progress: 0 },
+              long: { ...prev.byTimeframe?.long, currentAmount: 0, targetAmount: 0, progress: 0 },
+            },
+            byCategory: {
+              survival: { ...prev.byCategory?.survival, currentAmount: 0, targetAmount: 0, progress: 0 },
+              necessity: { ...prev.byCategory?.necessity, currentAmount: 0, targetAmount: 0, progress: 0 },
+              lifestyle: { ...prev.byCategory?.lifestyle, currentAmount: 0, targetAmount: 0, progress: 0 },
+            },
+            recentGoals: (prev.recentGoals || []).map((g: any) => ({
+              ...g,
+              amounts: { ...g.amounts, current: 0, target: 0 },
+              progress: { ...g.progress, percentage: 0 },
+              status: 'active',
+              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
+              metadata: { ...g.metadata, contributions: [], milestones: [] },
+            })),
+          };
+        });
+        queryClient.setQueryData(['goals', 'dashboard-list'], (prev: any) => {
+          if (!prev?.goals) return prev;
+          return {
+            ...prev,
+            goals: prev.goals.map((g: any) => ({
+              ...g,
+              amounts: { ...g.amounts, current: 0, target: 0 },
+              progress: { ...g.progress, percentage: 0 },
+              status: 'active',
+              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
+              metadata: { ...g.metadata, contributions: [], milestones: [] },
+            })),
+          };
+        });
+        queryClient.setQueryData(['goals'], (prev: any) => {
+          if (!prev?.goals) return prev;
+          return {
+            ...prev,
+            goals: prev.goals.map((g: any) => ({
+              ...g,
+              amounts: { ...g.amounts, current: 0, target: 0 },
+              progress: { ...g.progress, percentage: 0 },
+              status: 'active',
+              dates: { ...g.dates, completed: null, target: null, started: new Date().toISOString() },
+              metadata: { ...g.metadata, contributions: [], milestones: [] },
+            })),
+          };
+        });
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
           queryClient.invalidateQueries({ queryKey: ['goals'] }),
@@ -227,7 +291,11 @@ export default function DashboardScreen() {
 
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Dashboard</Text>
@@ -459,16 +527,12 @@ function ProfileModal({
   return (
     <Modal
       visible={visible}
-      transparent={true}
-      animationType="fade"
+      transparent={false}
+      animationType="slide"
+      presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity 
-          style={styles.modalBackdrop} 
-          activeOpacity={1}
-          onPress={onClose}
-        />
+      <View style={styles.modalFullScreen}>
         <View style={styles.modalContent}>
           {/* Header */}
           <View style={styles.modalHeader}>
@@ -479,7 +543,11 @@ function ProfileModal({
             <View style={{ width: rs(24) }} />
           </View>
 
-          <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent}>
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Avatar & User Info */}
             <View style={styles.modalUserSection}>
               <View style={styles.modalAvatar}>
@@ -612,7 +680,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F2',
   },
   contentContainer: {
-    paddingBottom: rs(24),
+    paddingBottom: rs(96),
+    flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -828,36 +897,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   // Modal Styles
-  modalOverlay: {
+  modalFullScreen: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    backgroundColor: '#F5F6FA',
   },
   modalContent: {
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: rs(20),
-    borderTopRightRadius: rs(20),
-    maxHeight: '90%',
-    minHeight: '60%',
+    flex: 1,
+    backgroundColor: '#F5F6FA',
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: rs(16),
-    paddingVertical: rs(12),
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E7',
+    paddingTop: rs(46),
+    paddingBottom: rs(12),
+    backgroundColor: '#F5F6FA',
   },
   modalTitle: {
-    fontSize: rs(18),
+    fontSize: rs(20),
     fontWeight: '700',
     color: '#18133E',
   },
@@ -866,18 +924,22 @@ const styles = StyleSheet.create({
   },
   modalScrollContent: {
     paddingHorizontal: rs(16),
-    paddingBottom: rs(24),
+    paddingBottom: rs(28),
+    paddingTop: rs(8),
+    flexGrow: 1,
   },
   modalUserSection: {
     alignItems: 'center',
     paddingVertical: rs(20),
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E7',
+    backgroundColor: '#FFFFFF',
+    borderRadius: rs(16),
+    borderWidth: 1,
+    borderColor: '#E8E8EF',
   },
   modalAvatar: {
-    width: rs(80),
-    height: rs(80),
-    borderRadius: rs(40),
+    width: rs(84),
+    height: rs(84),
+    borderRadius: rs(42),
     backgroundColor: '#2F8AC1',
     alignItems: 'center',
     justifyContent: 'center',
@@ -889,7 +951,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   modalUsername: {
-    fontSize: rs(24),
+    fontSize: rs(22),
     fontWeight: '700',
     color: '#18133E',
     marginBottom: rs(4),
@@ -906,14 +968,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: rs(16),
     borderTopWidth: 1,
-    borderTopColor: '#E5E5E7',
+    borderTopColor: '#EEF0F5',
   },
   modalStatItem: {
     alignItems: 'center',
     flex: 1,
   },
   modalStatValue: {
-    fontSize: rs(20),
+    fontSize: rs(18),
     fontWeight: '700',
     color: '#2F8AC1',
   },
@@ -925,12 +987,15 @@ const styles = StyleSheet.create({
   modalStatDivider: {
     width: 1,
     height: rs(30),
-    backgroundColor: '#E5E5E7',
+    backgroundColor: '#EEF0F5',
   },
   modalSuggestionsSection: {
-    paddingVertical: rs(16),
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E7',
+    marginTop: rs(16),
+    padding: rs(16),
+    backgroundColor: '#FFFFFF',
+    borderRadius: rs(16),
+    borderWidth: 1,
+    borderColor: '#E8E8EF',
   },
   modalSectionTitle: {
     fontSize: rs(16),
@@ -947,8 +1012,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: rs(10),
     paddingHorizontal: rs(12),
-    borderRadius: rs(8),
-    backgroundColor: '#E8E8EA',
+    borderRadius: rs(10),
+    backgroundColor: '#F2F3F7',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
@@ -975,11 +1040,11 @@ const styles = StyleSheet.create({
     width: '31%',
     paddingVertical: rs(10),
     paddingHorizontal: rs(8),
-    borderRadius: rs(8),
-    backgroundColor: '#F0F0F2',
+    borderRadius: rs(10),
+    backgroundColor: '#F2F3F7',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#E5E5E7',
+    borderColor: '#E8E8EF',
   },
   currencyOptionActive: {
     backgroundColor: '#2F8AC1',
@@ -1000,31 +1065,36 @@ const styles = StyleSheet.create({
   },
   modalActionsSection: {
     gap: rs(10),
-    paddingVertical: rs(16),
+    marginTop: rs(16),
+    padding: rs(16),
+    backgroundColor: '#FFFFFF',
+    borderRadius: rs(16),
+    borderWidth: 1,
+    borderColor: '#E8E8EF',
   },
   modalActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: rs(12),
+    paddingVertical: rs(13),
     paddingHorizontal: rs(16),
-    borderRadius: rs(10),
+    borderRadius: rs(12),
     gap: rs(8),
   },
   modalResetButton: {
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    backgroundColor: '#FFF0F0',
     borderWidth: 1,
-    borderColor: '#FF6B6B',
+    borderColor: '#FFB3B3',
   },
   modalResetButtonText: {
     fontSize: rs(14),
     fontWeight: '600',
-    color: '#FF6B6B',
+    color: '#D64545',
   },
   modalLogoutButton: {
-    backgroundColor: 'rgba(47, 138, 193, 0.1)',
+    backgroundColor: '#EEF6FC',
     borderWidth: 1,
-    borderColor: '#2F8AC1',
+    borderColor: '#B9D8F0',
   },
   modalLogoutButtonText: {
     fontSize: rs(14),
